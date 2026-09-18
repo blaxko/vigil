@@ -9,7 +9,8 @@
     "replay:fetch": "ts-node --project tsconfig.json scripts/replay/fetch-historical-data.ts",
     "replay:run": "ts-node --project tsconfig.json scripts/replay/run-replay.ts",
     "replay:compare": "ts-node --project tsconfig.json scripts/replay/build-comparison.ts",
-    "replay:verify": "ts-node --project tsconfig.json scripts/replay/verify-signatures.ts"
+    "replay:verify": "ts-node --project tsconfig.json scripts/replay/verify-signatures.ts",
+    "oracle:refresh": "ts-node --project tsconfig.json scripts/refresh-oracle.ts"
   },
   "devDependencies": {
     "@coral-xyz/anchor": "^0.32.1",

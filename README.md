@@ -349,6 +349,14 @@ own submission platform, none of which this environment has:
       demo link, and the branch statement above, per their submission
       form. This is an external platform action outside this environment.
 
+**Before each recording take:** run `npm run oracle:refresh` (from WSL, where
+the funded devnet wallet lives). Borrow/withdraw/liquidate reject with
+`StaleOraclePrices` unless the oracle was updated within the last 180 s, and
+this build runs no continuous keeper, so the refresh opens a ~3-minute window
+in which Borrow works. It is one permissionless closed-market `update_price`
+call using the DEX reference price already stored on-chain; it does not touch
+`set_regime`. Deposit and repay need no refresh.
+
 None of the three unchecked items can be completed from a local dev
 environment without the repo owner's own GitHub/recording/platform
 credentials — flagging that explicitly rather than marking this "done"
