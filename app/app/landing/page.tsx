@@ -124,8 +124,8 @@ export default function LandingPage() {
                 <div className="bento-icon">&#128274;</div>
                 <div className="bento-title">Full Transparency, By Design</div>
                 <div className="bento-body">
-                  Every demo screen says what is real and what is demo-controlled (today: only the
-                  open/closed market-hours flag). Every price update and every transaction is
+                  Every demo screen says what is real and what is demo-controlled (today: the
+                  open/closed market-hours flag, and a Borrow-time oracle refresh that re-posts a stored replay reference price, not a live one). Every price update and every transaction is
                   independently verifiable on-chain &mdash; no hidden simulation, ever.
                 </div>
               </div>

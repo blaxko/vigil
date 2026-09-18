@@ -59,7 +59,7 @@ environment — see "Submission checklist" at the bottom.**
       "the build passes") — see `screenshots/dashboard-page.png` and
       `screenshots/replay-page-final.png`
 - [x] On-screen disclosure labels: a "Disclosed design choice — Demo mode:
-      market hours set by hand, everything else real" callout on `/` (the
+      market hours set by hand, price refresh uses stored replay data" callout on `/` (the
       brief's "Branch B"), the "Replaying [date] weekend" badge and a
       GeckoTerminal-anchor-source callout on `/replay`
 - [x] Live Pyth market-hours row on `/` and `/landing` (Hermes
@@ -306,6 +306,42 @@ would otherwise hide:
    staleness checks because the on-chain `Clock` sysvar doesn't track host
    time. Fixed by reading the Clock sysvar directly in tests instead.
 
+## Demo-mode oracle refresh (on-demand, disclosed)
+
+`borrow`, `withdraw` and `liquidate` reject with `StaleOraclePrices` unless
+`RegimeState.last_update_ts` is within 180 s, and this build runs no
+continuously-running keeper. So the dashboard calls `POST /api/refresh-oracle`
+just before Borrow. The route:
+
+- makes one permissionless `update_price` call on the **closed-market** path,
+  which blends the anchor with the **DEX reference price already stored
+  on-chain from the Sept 11&ndash;14 replay** &mdash; a stored price, **not a live
+  one**, and nothing new is posted;
+- never calls `set_regime` and makes no market-hours judgement; it does
+  nothing while the on-chain regime is open (the open path needs a Pyth-shaped
+  price account, which is out of scope), in which case Borrow shows the
+  stale-oracle error;
+- checks the on-chain age first and refreshes only if the oracle is older than
+  60 s, so it sends at most one transaction per minute however often it is hit,
+  and concurrent callers share one in-flight refresh;
+- signs with a dedicated **throwaway devnet key** (`CRANK_SECRET_KEY` JSON
+  array, or `CRANK_KEYPAIR_PATH` locally), never the deployer or keeper key,
+  and has no fallback to any other key. `update_price` is permissionless, so
+  the key only needs a few cents of devnet SOL; if unset, the route returns 503
+  and Borrow simply surfaces the stale-oracle error.
+
+The Borrow transaction also creates the borrower's USDC token account
+(idempotently) when it does not exist yet; the program requires it, and a
+first-time wallet would otherwise fail with `AccountNotInitialized`.
+
+`npm run oracle:refresh` does the same refresh from the command line if you
+want to warm the oracle manually before a recording take.
+
+**Faucet key:** the "Get Test AAPLx" faucet signs with a disposable key that
+holds only the AAPLx `MintTokens` authority (`MINT_AUTHORITY_SECRET_KEY`). It
+was rotated on Sept 18 after the previous key's secret was exposed; the mint
+authority is now `AfH8S3TU2vFVH6b6Z63vL5pmtK4fX5b3jsakHhjG6HSc`.
+
 ## Devnet-only simplifications (disclosed, not hidden)
 
 - `mock_pyth` stands in for Pyth's real Solana Receiver program — see
@@ -338,8 +374,7 @@ own submission platform, none of which this environment has:
       doesn't have.
 - [ ] **Record the demo video** following the brief's Section 7 flow
       (Steps 1&ndash;5), stating on screen and in the written submission
-      notes that **Branch B (Demo Mode — "market hours set by hand, everything
-      else real" on screen)** ran for Step 1 — not Branch A —
+      notes that **Branch B (Demo Mode — "market hours set by hand, price refresh uses stored replay data" on screen)** ran for Step 1 — not Branch A —
       because this build has no live continuously-running Hermes keeper
       verifying real NYSE hours at record time (see the on-screen banner
       on `/` for the exact wording to read aloud or caption). Steps 2&ndash;5

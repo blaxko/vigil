@@ -5,7 +5,12 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { BN } from "@coral-xyz/anchor";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
-import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync } from "@solana/spl-token";
+import {
+  TOKEN_2022_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+  createAssociatedTokenAccountIdempotentInstruction,
+  getAssociatedTokenAddressSync,
+} from "@solana/spl-token";
 
 import { AAPLX_MINT, COLLATERAL_DECIMALS, FEED_ID, PRICE_SCALE, USDC_MINT } from "@/lib/constants";
 import { getLendingMarketProgram, getProvider } from "@/lib/anchor";
@@ -23,13 +28,27 @@ function describeTxError(err: unknown): string {
   if (/insufficient/i.test(msg) && /lamports/i.test(msg)) return "Insufficient SOL for transaction fees.";
   if (/0x1\b/.test(msg) || /insufficient funds/i.test(msg)) return "Insufficient token balance.";
   if (/StalePythPrice|StaleOraclePrices/.test(msg))
-    return "Demo mode: oracle refresh is manual, not automated — this position needs a fresh price post before borrowing. Deposits and repayments are unaffected.";
+    return "Demo mode: the automatic oracle refresh did not run, so the on-chain price is stale. It only works while the regime is closed, and it re-posts a stored replay reference price, not a live one. Deposits and repayments are unaffected.";
   if (/BorrowLimitExceeded/.test(msg)) return "Amount exceeds your current borrow limit.";
   if (/WithdrawalExceedsLimit/.test(msg)) return "Withdrawal would leave the position under-collateralized.";
   if (/PositionHoldTimeActive/.test(msg)) return "Position is still within its minimum hold time after the last borrow.";
   if (/RepayExceedsDebt/.test(msg)) return "Repay amount exceeds outstanding debt.";
   if (/Simulation failed/i.test(msg)) return `Transaction simulation failed: ${msg.split("\n")[0]}`;
   return msg;
+}
+
+/** Demo mode: asks the server to refresh the oracle before Borrow, because
+ * this build has no continuously-running keeper and the lending program
+ * rejects prices older than 180 s. The route re-posts the DEX reference price
+ * already stored on-chain (Sept 11-14 replay data) -- it is NOT a live price --
+ * and does nothing while the on-chain regime is open. Best effort: never
+ * throws, so Borrow still runs and surfaces a stale-oracle error if needed. */
+async function refreshDemoOracle(): Promise<void> {
+  try {
+    await fetch("/api/refresh-oracle", { method: "POST" });
+  } catch {
+    // fall through -- describeTxError explains a stale oracle if Borrow fails
+  }
 }
 
 export function Dashboard() {
@@ -108,6 +127,10 @@ export function Dashboard() {
       const amount = Number(borrowAmount);
       if (!amount || amount <= 0) throw new Error("Enter a positive borrow amount.");
 
+      setPending("Refreshing demo oracle price...");
+      await refreshDemoOracle();
+      setPending("Borrowing USDC...");
+
       const provider = getProvider(connection, wallet);
       const program = getLendingMarketProgram(provider);
       const reserveAddr = reservePda(AAPLX_MINT!);
@@ -119,6 +142,12 @@ export function Dashboard() {
 
       return program.methods
         .borrow(amountBase)
+        // A first-time borrower has no USDC token account yet and the program
+        // requires it to exist; create it (no-op if it already does) in the
+        // same transaction so Borrow works from a fresh wallet.
+        .preInstructions([
+          createAssociatedTokenAccountIdempotentInstruction(wallet.publicKey, ownerDebtAta, wallet.publicKey, USDC_MINT!, TOKEN_PROGRAM_ID),
+        ])
         .accounts({
           owner: wallet.publicKey,
           reserve: reserveAddr,
@@ -212,11 +241,11 @@ export function Dashboard() {
 
           <div className="panel disclosure">
             <span className="disclosure-tag">Disclosed design choice</span>
-            <h2 className="disclosure-title">Demo mode: market hours set by hand, everything else real</h2>
+            <h2 className="disclosure-title">Demo mode: market hours set by hand, price refresh uses stored replay data</h2>
             <p className="disclosure-lead">
-              The on-chain open/closed flag is set manually for this demo (Pyth&apos;s real market hours are
-              shown beside it); every deposit, borrow and repay is a real, unscripted transaction on the
-              deployed devnet program.
+              The on-chain open/closed flag is set manually (Pyth&apos;s real market hours are shown beside it), and
+              Borrow triggers an oracle refresh that re-posts a stored replay reference price, not a live one.
+              Every deposit, borrow and repay is still a real, unscripted transaction on the deployed devnet program.
             </p>
             <details>
               <summary>Details</summary>
@@ -226,7 +255,9 @@ export function Dashboard() {
                 infrastructure from the on-chain programs built here. So the regime flag reflects
                 on-chain state, not a live market-hours check performed at this instant. Only that
                 open/closed input is demo-controlled &mdash; the pricing math, the position accounting
-                and every transaction are the real deployed programs.
+                and every transaction are the real deployed programs. Likewise, with no keeper running,
+                pressing Borrow first triggers a demo oracle refresh that re-posts the DEX reference price
+                already stored on-chain from the Sept 11&ndash;14 replay: a stored price, not a live one.
               </p>
             </details>
           </div>
@@ -298,6 +329,11 @@ export function Dashboard() {
 
           <div className="panel">
             <div className="section-title">Borrow USDC</div>
+            <div className="gloss">
+              Demo mode: before you borrow, the app refreshes the oracle by re-posting the DEX reference price
+              already stored on-chain from the Sept 11&ndash;14 replay &mdash; a stored price, not a live one. It only
+              runs while the on-chain regime is closed.
+            </div>
             <div className="form-row">
               <input type="number" placeholder="USDC amount" value={borrowAmount} onChange={(e) => setBorrowAmount(e.target.value)} />
               <button disabled={!wallet.connected || !!pending} onClick={handleBorrow}>
