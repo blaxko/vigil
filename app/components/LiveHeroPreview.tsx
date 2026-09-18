@@ -33,7 +33,7 @@ export function LiveHeroPreview() {
       <div className="row">
         <span className="label">On-chain regime</span>
         {loaded ? (
-          <span className={`badge ${regimeState!.isOpen ? "open" : "closed"}`}>
+          <span className={`badge badge-nowrap ${regimeState!.isOpen ? "open" : "closed"}`}>
             {regimeState!.isOpen ? "Open" : "Closed — Converging"}
           </span>
         ) : (

@@ -233,8 +233,8 @@ export function Dashboard() {
           <div className="panel">
             <div className="section-title">Market</div>
             <div className="row">
-              <span className="label">On-chain regime (demo-set)</span>
-              <span className={`badge ${regimeState?.isOpen ? "open" : "closed"}`}>
+              <span className="label">On-chain regime <span style={{ whiteSpace: "nowrap" }}>(demo-set)</span></span>
+              <span className={`badge badge-nowrap ${regimeState?.isOpen ? "open" : "closed"}`}>
                 {regimeState ? (regimeState.isOpen ? "Open" : "Closed — Converging") : "Loading..."}
               </span>
             </div>
