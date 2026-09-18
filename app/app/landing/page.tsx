@@ -35,6 +35,10 @@ export default function LandingPage() {
               anchor-decay-clamp pricing model instead &mdash; an oracle that knows the difference
               between a live market and a closed one.
             </p>
+            <p className="lp-who">
+              <strong>Built for</strong> anyone holding tokenized stock (like AAPLx) who needs USDC on a
+              Saturday &mdash; without selling the position or trusting a frozen Friday price.
+            </p>
             <div className="lp-cta-row">
               <Link href="/" className="btn-gradient">
                 Launch App
@@ -67,8 +71,8 @@ export default function LandingPage() {
           </Reveal>
 
           <div className="bento-grid">
-            <Reveal>
-              <div className="bento-card bento-large">
+            <Reveal className="bento-large">
+              <div className="bento-card">
                 <div className="bento-icon">&#9679;</div>
                 <div className="bento-title">Regime-Aware Oracle</div>
                 <div className="bento-body">
@@ -115,14 +119,58 @@ export default function LandingPage() {
               </div>
             </Reveal>
 
-            <Reveal delay={240}>
+            <Reveal delay={240} className="bento-wide">
               <div className="bento-card">
                 <div className="bento-icon">&#128274;</div>
                 <div className="bento-title">Full Transparency, By Design</div>
                 <div className="bento-body">
-                  Every demo segment is labeled Branch A (real market hours) or Branch B (demo mode),
-                  on screen, every time. Every price update and every transaction is independently
-                  verifiable on-chain &mdash; no hidden simulation, ever.
+                  Every demo screen says what is real and what is demo-controlled (today: only the
+                  open/closed market-hours flag). Every price update and every transaction is
+                  independently verifiable on-chain &mdash; no hidden simulation, ever.
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      <section className="lp-section" id="why-solana">
+        <div className="lp-container">
+          <Reveal>
+            <div className="lp-section-head">
+              <h2 className="lp-section-title">Why Solana</h2>
+              <p style={{ color: "var(--muted)", fontSize: 15 }}>
+                Three reasons this is built here, not just deployed here.
+              </p>
+            </div>
+          </Reveal>
+
+          <div className="why-grid">
+            <Reveal>
+              <div className="bento-card">
+                <div className="bento-title">Where tokenized stocks live</div>
+                <div className="bento-body">
+                  The real AAPLx token and its liquid AAPLx/USDC market already trade on Solana &mdash; the
+                  collateral, the debt asset and the price signal are all native.
+                </div>
+              </div>
+            </Reveal>
+            <Reveal delay={80}>
+              <div className="bento-card">
+                <div className="bento-title">Token-2022 scaled-UI-amount</div>
+                <div className="bento-body">
+                  Tokenized stocks adjust for splits and dividends through a Token-2022 multiplier. Vigil
+                  reads it on-chain, so collateral is valued correctly without an off-chain fix-up.
+                </div>
+              </div>
+            </Reveal>
+            <Reveal delay={160}>
+              <div className="bento-card">
+                <div className="bento-title">Cheap, frequent price ticks</div>
+                <div className="bento-body">
+                  Continuous pricing means updating on-chain state all weekend &mdash; the replay posts 149
+                  real ticks (298 transactions) across one closure, which only works with Solana&apos;s
+                  low fees.
                 </div>
               </div>
             </Reveal>
@@ -145,7 +193,9 @@ export default function LandingPage() {
                 <div className="bento-title" style={{ fontSize: 16 }}>
                   Deposit
                 </div>
-                <div className="bento-body">Deposit tokenized stock collateral into an isolated market.</div>
+                <div className="bento-body">
+                  Deposit tokenized stock (like AAPLx) into an isolated market &mdash; no need to sell it.
+                </div>
               </div>
             </Reveal>
             <Reveal delay={80}>
@@ -154,7 +204,9 @@ export default function LandingPage() {
                 <div className="bento-title" style={{ fontSize: 16 }}>
                   Borrow
                 </div>
-                <div className="bento-body">Borrow stablecoin up to the live Borrow-Limit Price.</div>
+                <div className="bento-body">
+                  Borrow USDC up to the live Borrow-Limit Price &mdash; even on a Saturday.
+                </div>
               </div>
             </Reveal>
             <Reveal delay={160}>

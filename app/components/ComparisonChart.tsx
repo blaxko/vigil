@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 interface ComparisonPoint {
   timestampUtc: string;
@@ -24,17 +24,24 @@ interface ComparisonData {
 
 const WIDTH = 760;
 const HEIGHT = 320;
-const PAD_LEFT = 56;
+const PAD_LEFT = 56; // minimum; grows on narrow screens so scaled-up labels still fit
 const PAD_RIGHT = 16;
 const PAD_TOP = 16;
 const PAD_BOTTOM = 32;
+const MIN_LABEL_PX = 11; // axis labels never render smaller than this on screen
 
-function buildPath(points: ComparisonPoint[], key: keyof ComparisonPoint, min: number, max: number): string {
-  const innerW = WIDTH - PAD_LEFT - PAD_RIGHT;
+function buildPath(
+  points: ComparisonPoint[],
+  key: keyof ComparisonPoint,
+  min: number,
+  max: number,
+  padLeft: number,
+): string {
+  const innerW = WIDTH - padLeft - PAD_RIGHT;
   const innerH = HEIGHT - PAD_TOP - PAD_BOTTOM;
   return points
     .map((p, i) => {
-      const x = PAD_LEFT + (i / Math.max(points.length - 1, 1)) * innerW;
+      const x = padLeft + (i / Math.max(points.length - 1, 1)) * innerW;
       const v = p[key] as number;
       const y = PAD_TOP + innerH - ((v - min) / (max - min || 1)) * innerH;
       return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
@@ -45,6 +52,21 @@ function buildPath(points: ComparisonPoint[], key: keyof ComparisonPoint, min: n
 export function ComparisonChart() {
   const [data, setData] = useState<ComparisonData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [renderedWidth, setRenderedWidth] = useState(WIDTH);
+
+  // The SVG scales with its container (viewBox), so a fixed font-size in SVG
+  // units shrinks on phones. Track the rendered width so the labels can be
+  // sized in SVG units that come out at MIN_LABEL_PX on screen.
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const update = () => setRenderedWidth(el.clientWidth || WIDTH);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [data]);
 
   useEffect(() => {
     fetch("/comparison-output.json")
@@ -69,34 +91,45 @@ export function ComparisonChart() {
   const max = Math.max(...allValues) * 1.02;
 
   const series: { key: keyof ComparisonPoint; color: string; label: string }[] = [
-    { key: "dexOnlyPriceUsd", color: "#e24d4d", label: "DEX-only vault (raw, undampened)" },
-    { key: "frozenPriceUsd", color: "#e0a929", label: "Frozen-price vault (Friday close, jumps at reopen)" },
-    { key: "vigilLiquidationUsd", color: "#5b8cff", label: "Vigil Liquidation Price" },
-    { key: "vigilBorrowLimitUsd", color: "#33c07a", label: "Vigil Borrow-Limit Price" },
+    { key: "dexOnlyPriceUsd", color: "var(--red)", label: "DEX-only vault (raw, undampened)" },
+    { key: "frozenPriceUsd", color: "var(--amber)", label: "Frozen-price vault (Friday close, jumps at reopen)" },
+    { key: "vigilLiquidationUsd", color: "var(--blue)", label: "Vigil Liquidation Price" },
+    { key: "vigilBorrowLimitUsd", color: "var(--green)", label: "Vigil Borrow-Limit Price" },
   ];
 
+  // SVG units per screen pixel; label font in SVG units = MIN_LABEL_PX * that
+  // (never below the 11 the desktop layout already uses). The left gutter
+  // grows to fit the widest label ("$367" ~ 4 glyphs at ~0.62em each).
+  const unitsPerPx = WIDTH / Math.max(renderedWidth, 1);
+  const labelSize = Math.max(11, MIN_LABEL_PX * unitsPerPx);
+  const padLeft = Math.max(PAD_LEFT, Math.ceil(labelSize * 4 * 0.62) + 10);
+
   return (
-    <div>
-      <svg width={WIDTH} height={HEIGHT} style={{ maxWidth: "100%", background: "#0d0f15", borderRadius: 8 }}>
+    <div ref={wrapRef}>
+      <svg
+        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        width="100%"
+        style={{ height: "auto", display: "block", background: "var(--inset)", borderRadius: 8 }}
+      >
         {[0, 0.25, 0.5, 0.75, 1].map((t) => {
           const y = PAD_TOP + t * (HEIGHT - PAD_TOP - PAD_BOTTOM);
           const value = max - t * (max - min);
           return (
             <g key={t}>
-              <line x1={PAD_LEFT} x2={WIDTH - PAD_RIGHT} y1={y} y2={y} stroke="#232733" strokeWidth={1} />
-              <text x={4} y={y + 4} fill="#8a90a2" fontSize={11}>
+              <line x1={padLeft} x2={WIDTH - PAD_RIGHT} y1={y} y2={y} style={{ stroke: "var(--card-border)" }} strokeWidth={1} />
+              <text x={4} y={y + labelSize * 0.35} style={{ fill: "var(--muted)" }} fontSize={labelSize}>
                 ${value.toFixed(0)}
               </text>
             </g>
           );
         })}
         {series.map((s) => (
-          <path key={s.key} d={buildPath(points, s.key, min, max)} fill="none" stroke={s.color} strokeWidth={2} />
+          <path key={s.key} d={buildPath(points, s.key, min, max, padLeft)} fill="none" style={{ stroke: s.color }} strokeWidth={2} />
         ))}
       </svg>
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 10 }}>
         {series.map((s) => (
-          <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#8a90a2" }}>
+          <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--muted)" }}>
             <span style={{ width: 10, height: 10, background: s.color, borderRadius: 2, display: "inline-block" }} />
             {s.label}
           </div>

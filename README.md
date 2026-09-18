@@ -58,9 +58,13 @@ environment — see "Submission checklist" at the bottom.**
 - [x] Both frontend pages screenshot-verified actually rendering (not just
       "the build passes") — see `screenshots/dashboard-page.png` and
       `screenshots/replay-page-final.png`
-- [x] On-screen disclosure labels: Branch A/B state on `/`, the
-      "Replaying [date] weekend" badge and GeckoTerminal-anchor-source
-      callout on `/replay`
+- [x] On-screen disclosure labels: a "Disclosed design choice — Demo mode:
+      market hours set by hand, everything else real" callout on `/` (the
+      brief's "Branch B"), the "Replaying [date] weekend" badge and a
+      GeckoTerminal-anchor-source callout on `/replay`
+- [x] Live Pyth market-hours row on `/` and `/landing` (Hermes
+      `price_feeds` metadata for the real AAPL feed — schedule only, not a
+      price; the on-chain oracle itself is still mock-fed, see above)
 - [ ] Demo recording + hackathon submission (this repo owner's action —
       see "Submission checklist" below)
 
@@ -184,8 +188,8 @@ Full per-signature output: `scripts/replay/signature-verification.json`.
 
 ### Frontend screenshots (real renders, not a claim the build passes)
 
-- `screenshots/dashboard-page.png` — `/`, showing the Branch B disclosure
-  banner, live market panel, and deposit/borrow/repay forms.
+- `screenshots/dashboard-page.png` — `/`, showing the demo-mode disclosure
+  callout, live market panel, and deposit/borrow/repay forms.
 - `screenshots/replay-page-final.png` — `/replay`, showing the "Replaying
   Sept 11&ndash;14 2026 weekend" badge, the GeckoTerminal-anchor-source
   disclosure, and the real four-series comparison chart rendering
@@ -334,7 +338,8 @@ own submission platform, none of which this environment has:
       doesn't have.
 - [ ] **Record the demo video** following the brief's Section 7 flow
       (Steps 1&ndash;5), stating on screen and in the written submission
-      notes that **Branch B (Demo Mode)** ran for Step 1 — not Branch A —
+      notes that **Branch B (Demo Mode — "market hours set by hand, everything
+      else real" on screen)** ran for Step 1 — not Branch A —
       because this build has no live continuously-running Hermes keeper
       verifying real NYSE hours at record time (see the on-screen banner
       on `/` for the exact wording to read aloud or caption). Steps 2&ndash;5
