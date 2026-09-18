@@ -1,0 +1,15 @@
+/target
+/node_modules
+/.anchor
+/test-ledger
+.DS_Store
+*.log
+.env
+.env.local
+app/.next
+app/node_modules
+scripts/node_modules
+
+# Devnet-only secret keypairs -- never commit private keys, even test ones.
+keeper-keypair.json
+scripts/devnet-demo-keys/

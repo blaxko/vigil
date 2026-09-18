@@ -1,0 +1,23 @@
+[package]
+name = "regime_oracle"
+version = "0.1.0"
+description = "Vigil regime-aware pricing oracle: anchor-decay-clamp blend between Pyth and a keeper-posted DEX reference"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "regime_oracle"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+idl-build = ["anchor-lang/idl-build"]
+default = []
+
+[dependencies]
+anchor-lang = "1.2.0"
+
+[dev-dependencies]
+proptest = "1.4"

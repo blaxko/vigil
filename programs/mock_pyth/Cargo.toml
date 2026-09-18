@@ -1,0 +1,20 @@
+[package]
+name = "mock_pyth"
+version = "0.1.0"
+description = "Test-only Pyth PriceUpdateV2 writer -- devnet demo / local-test oracle substitute, never a mainnet dependency"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "mock_pyth"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+idl-build = ["anchor-lang/idl-build"]
+default = []
+
+[dependencies]
+anchor-lang = { version = "1.2.0", features = ["init-if-needed"] }
