@@ -1,0 +1,1089 @@
+{
+  "address": "nKD282jg8NPnVLv5hhPrRk8XRfkan8xj73KP6fNTK5K",
+  "metadata": {
+    "name": "lending_market",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Vigil isolated lending market: deposit tokenized equity, borrow USDC against regime-aware prices"
+  },
+  "instructions": [
+    {
+      "name": "borrow",
+      "discriminator": [
+        228,
+        253,
+        131,
+        202,
+        207,
+        116,
+        89,
+        18
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "position"
+          ]
+        },
+        {
+          "name": "reserve",
+          "writable": true
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve"
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "regime_state",
+          "relations": [
+            "reserve"
+          ]
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "debt_mint"
+        },
+        {
+          "name": "owner_debt_ata",
+          "writable": true
+        },
+        {
+          "name": "debt_vault",
+          "writable": true,
+          "relations": [
+            "reserve"
+          ]
+        },
+        {
+          "name": "reserve_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "deposit",
+      "discriminator": [
+        242,
+        35,
+        198,
+        137,
+        82,
+        225,
+        242,
+        182
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "reserve",
+          "writable": true
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve"
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "owner_collateral_ata",
+          "writable": true
+        },
+        {
+          "name": "collateral_vault",
+          "writable": true,
+          "relations": [
+            "reserve"
+          ]
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount_base",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_reserve",
+      "docs": [
+        "One isolated market PDA per collateral mint (AAPLx only for MVP)."
+      ],
+      "discriminator": [
+        91,
+        188,
+        92,
+        135,
+        153,
+        155,
+        112,
+        16
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "debt_mint"
+        },
+        {
+          "name": "regime_state",
+          "docs": [
+            "The `regime_oracle::RegimeState` PDA this reserve will price",
+            "against. Stored by reference only -- not deserialized here, no CPI",
+            "needed to record it.",
+            "re-derives and validates this PDA's seeds against the recorded key."
+          ]
+        },
+        {
+          "name": "reserve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "reserve_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "debt_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  98,
+                  116,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_token_program",
+          "docs": [
+            "Collateral (e.g. Token-2022 AAPLx) and debt (e.g. legacy-Token USDC)",
+            "mints can be owned by different token programs; this instruction",
+            "creates a vault for each, so -- like `liquidate` -- it needs two",
+            "separate token-program references rather than one shared one."
+          ]
+        },
+        {
+          "name": "debt_token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "max_ltv_bps",
+          "type": "u16"
+        },
+        {
+          "name": "liquidation_threshold_bps",
+          "type": "u16"
+        },
+        {
+          "name": "liquidation_bonus_bps",
+          "type": "u16"
+        },
+        {
+          "name": "min_hold_time_secs",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "liquidate",
+      "docs": [
+        "Permissionless: checked against the Liquidation Price with a",
+        "staleness guard. Full-position liquidation only (MVP scope)."
+      ],
+      "discriminator": [
+        223,
+        179,
+        226,
+        125,
+        48,
+        46,
+        39,
+        74
+      ],
+      "accounts": [
+        {
+          "name": "liquidator",
+          "docs": [
+            "Permissionless: any funded wallet may liquidate an eligible",
+            "position, per the brief's bot-triggered liquidation-engine design."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "reserve",
+          "writable": true
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve"
+              },
+              {
+                "kind": "account",
+                "path": "position.owner",
+                "account": "Position"
+              }
+            ]
+          }
+        },
+        {
+          "name": "regime_state",
+          "relations": [
+            "reserve"
+          ]
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "debt_mint"
+        },
+        {
+          "name": "liquidator_debt_ata",
+          "writable": true
+        },
+        {
+          "name": "liquidator_collateral_ata",
+          "writable": true
+        },
+        {
+          "name": "collateral_vault",
+          "writable": true,
+          "relations": [
+            "reserve"
+          ]
+        },
+        {
+          "name": "debt_vault",
+          "writable": true,
+          "relations": [
+            "reserve"
+          ]
+        },
+        {
+          "name": "reserve_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_token_program",
+          "docs": [
+            "Collateral and debt mints can be owned by different token programs",
+            "(e.g. AAPLx under Token-2022, USDC under the legacy Token program),",
+            "and liquidate is the one instruction that moves both in a single",
+            "call -- so, unlike deposit/withdraw/borrow/repay, it needs two",
+            "separate token-program references rather than one shared one."
+          ]
+        },
+        {
+          "name": "debt_token_program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "repay",
+      "discriminator": [
+        234,
+        103,
+        67,
+        82,
+        208,
+        234,
+        219,
+        166
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "position"
+          ]
+        },
+        {
+          "name": "reserve",
+          "writable": true
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve"
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "debt_mint"
+        },
+        {
+          "name": "owner_debt_ata",
+          "writable": true
+        },
+        {
+          "name": "debt_vault",
+          "writable": true,
+          "relations": [
+            "reserve"
+          ]
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "withdraw",
+      "discriminator": [
+        183,
+        18,
+        70,
+        156,
+        148,
+        109,
+        161,
+        34
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "position"
+          ]
+        },
+        {
+          "name": "reserve",
+          "writable": true
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve"
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "regime_state",
+          "relations": [
+            "reserve"
+          ]
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "owner_collateral_ata",
+          "writable": true
+        },
+        {
+          "name": "collateral_vault",
+          "writable": true,
+          "relations": [
+            "reserve"
+          ]
+        },
+        {
+          "name": "reserve_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount_base",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Position",
+      "discriminator": [
+        170,
+        188,
+        143,
+        228,
+        122,
+        64,
+        247,
+        208
+      ]
+    },
+    {
+      "name": "Reserve",
+      "discriminator": [
+        43,
+        242,
+        204,
+        202,
+        26,
+        247,
+        59,
+        127
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "StaleOraclePrices",
+      "msg": "Regime oracle prices are stale relative to this instruction"
+    },
+    {
+      "code": 6001,
+      "name": "BorrowLimitExceeded",
+      "msg": "Requested borrow amount exceeds the Borrow-Limit-Price-derived limit"
+    },
+    {
+      "code": 6002,
+      "name": "WithdrawalExceedsLimit",
+      "msg": "Withdrawal would leave the position under-collateralized"
+    },
+    {
+      "code": 6003,
+      "name": "RepayExceedsDebt",
+      "msg": "Repay amount exceeds outstanding debt"
+    },
+    {
+      "code": 6004,
+      "name": "InsufficientCollateral",
+      "msg": "Withdrawal amount exceeds deposited collateral"
+    },
+    {
+      "code": 6005,
+      "name": "PositionHoldTimeActive",
+      "msg": "Position is still within its minimum hold time"
+    },
+    {
+      "code": 6006,
+      "name": "PositionNotLiquidatable",
+      "msg": "Position is not eligible for liquidation: health factor is healthy"
+    },
+    {
+      "code": 6007,
+      "name": "OracleMismatch",
+      "msg": "Provided regime_state account does not match this reserve's configured oracle"
+    },
+    {
+      "code": 6008,
+      "name": "MintMismatch",
+      "msg": "Provided mint does not match this reserve's configured mint"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidScaledUiExtension",
+      "msg": "Token-2022 scaled-UI-amount extension data was malformed or missing a multiplier"
+    }
+  ],
+  "types": [
+    {
+      "name": "Position",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "reserve",
+            "type": "pubkey"
+          },
+          {
+            "name": "collateral_base",
+            "docs": [
+              "Collateral held, in the mint's *base* units (never display/UI",
+              "units) -- Token-2022 scaled-ui-amount conversion happens only at",
+              "the point value is computed, never stored."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "debt_amount",
+            "docs": [
+              "Outstanding USDC debt (6-decimal base units). No interest accrual",
+              "in the MVP (out of scope; see brief section 6)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "last_borrow_ts",
+            "docs": [
+              "Unix timestamp of the most recent borrow against this position."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RegimeState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "keeper_authority",
+            "docs": [
+              "Keeper authority allowed to call `set_regime` and `post_dex_reference`."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "pyth_receiver_program",
+            "docs": [
+              "The program that must own the account passed as `update_price`'s",
+              "`price_update`. Set once at `initialize` (production: Pyth's real",
+              "Solana Receiver program, same address on every cluster; local/devnet",
+              "testing: a lightweight mock price-setter program, so tests can",
+              "exercise the open-market path deterministically without depending",
+              "on Hermes). The staleness bound and feed-id check inside",
+              "`update_price` are identical either way -- only the trusted account",
+              "origin differs, the same kind of documented substitution as the",
+              "devnet mock-USDC mint."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "price_feed_id",
+            "docs": [
+              "The Pyth `PriceUpdateV2` feed id this instance tracks (e.g. AAPLx/USD)."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "is_open",
+            "docs": [
+              "True while the underlying market (NYSE hours) is open."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "last_regime_change_ts",
+            "docs": [
+              "Unix timestamp of the most recent `is_open` transition."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "pending_reopen_snap",
+            "docs": [
+              "True only for the single tick immediately following a Closed->Open",
+              "transition, so `update_price` knows to apply the wider reopen clamp",
+              "instead of the normal per-tick clamp."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "anchor_price",
+            "docs": [
+              "Last live Pyth price observed while the market was open -- the",
+              "\"anchor\" the decay function blends away from during closure."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "anchor_ts",
+            "docs": [
+              "Unix timestamp `anchor_price` was captured at."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "dex_reference_price",
+            "docs": [
+              "Most recent keeper-posted DEX TWAP reference price (micro-USD)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "dex_reference_liquidity",
+            "docs": [
+              "Most recent keeper-posted DEX pool liquidity depth (micro-USD),",
+              "used to dampen the DEX reference's influence on the closed blend."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "dex_reference_ts",
+            "docs": [
+              "Unix timestamp the DEX reference was last posted."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "borrow_limit_price",
+            "docs": [
+              "Slow-smoothed, conservative price the lending market uses to compute",
+              "borrow limits."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "liquidation_price",
+            "docs": [
+              "Fast-smoothed, wider-banded price the lending market uses to check",
+              "liquidation eligibility."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "last_update_ts",
+            "docs": [
+              "Unix timestamp the two output prices were last updated."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Reserve",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "collateral_mint",
+            "docs": [
+              "Collateral token mint (AAPLx, Token-2022 with scaled-ui-amount)."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "collateral_vault",
+            "docs": [
+              "Vault token account (owned by this Reserve's PDA authority) holding",
+              "all deposited collateral for this isolated market."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "debt_mint",
+            "docs": [
+              "Debt token mint (USDC or a devnet mock, plain SPL Token)."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "debt_vault",
+            "docs": [
+              "Vault token account holding USDC available to lend out."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "regime_state",
+            "docs": [
+              "The `regime_oracle::RegimeState` PDA this reserve prices against.",
+              "Enforced isolation: one market, one collateral asset, one oracle."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "max_ltv_bps",
+            "docs": [
+              "Max loan-to-value against the Borrow-Limit Price, in bps."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "liquidation_threshold_bps",
+            "docs": [
+              "Debt/collateral ratio (against the Liquidation Price) at or above",
+              "which a position becomes liquidation-eligible, in bps."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "liquidation_bonus_bps",
+            "docs": [
+              "Discount a liquidator receives off the Liquidation Price, in bps",
+              "(flat-discount liquidation only -- no Dutch auction for MVP)."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "min_hold_time_secs",
+            "docs": [
+              "Minimum seconds a position must hold a borrow before collateral can",
+              "be withdrawn or the debt increased again -- closes the",
+              "latency-arbitrage window at the open/close regime boundary."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "total_collateral_base",
+            "type": "u64"
+          },
+          {
+            "name": "total_debt",
+            "type": "u64"
+          },
+          {
+            "name": "authority_bump",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

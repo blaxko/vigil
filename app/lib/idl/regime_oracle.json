@@ -1,0 +1,499 @@
+{
+  "address": "7PHoqxS9CQxy6vTmDCEqkmB1oNCeCotxFSPg3rKmDQUV",
+  "metadata": {
+    "name": "regime_oracle",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Vigil regime-aware pricing oracle: anchor-decay-clamp blend between Pyth and a keeper-posted DEX reference"
+  },
+  "instructions": [
+    {
+      "name": "initialize",
+      "docs": [
+        "One-time setup of a `RegimeState` PDA for a given Pyth price feed id",
+        "(one per collateral asset, matching the isolated-market design)."
+      ],
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "keeper_authority",
+          "docs": [
+            "The keeper authority permitted to call `set_regime` and",
+            "`post_dex_reference` for this market. Set once at init; there is no",
+            "admin instruction to change it (out of scope per the MVP brief --",
+            "redeploy with a new keeper if it needs to rotate)."
+          ]
+        },
+        {
+          "name": "regime_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  109,
+                  101,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "price_feed_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "price_feed_id",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "initial_price",
+          "type": "u64"
+        },
+        {
+          "name": "pyth_receiver_program",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "post_dex_reference",
+      "docs": [
+        "Keeper-only: records the latest off-chain-computed DEX TWAP and the",
+        "liquidity depth it was computed over."
+      ],
+      "discriminator": [
+        40,
+        107,
+        242,
+        182,
+        54,
+        162,
+        151,
+        174
+      ],
+      "accounts": [
+        {
+          "name": "keeper_authority",
+          "docs": [
+            "Must match `regime_state.keeper_authority`. Permissioned: the DEX",
+            "reference is only as trustworthy as whoever is allowed to post it."
+          ],
+          "signer": true,
+          "relations": [
+            "regime_state"
+          ]
+        },
+        {
+          "name": "regime_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  109,
+                  101,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "regime_state.price_feed_id",
+                "account": "RegimeState"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "dex_price",
+          "type": "u64"
+        },
+        {
+          "name": "dex_liquidity",
+          "type": "u128"
+        }
+      ]
+    },
+    {
+      "name": "set_regime",
+      "docs": [
+        "Keeper-only: flips the market open/closed flag."
+      ],
+      "discriminator": [
+        143,
+        13,
+        143,
+        192,
+        181,
+        124,
+        8,
+        52
+      ],
+      "accounts": [
+        {
+          "name": "keeper_authority",
+          "docs": [
+            "Must match `regime_state.keeper_authority`. Permissioned so no",
+            "arbitrary signer can flip a market's open/closed flag."
+          ],
+          "signer": true,
+          "relations": [
+            "regime_state"
+          ]
+        },
+        {
+          "name": "regime_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  109,
+                  101,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "regime_state.price_feed_id",
+                "account": "RegimeState"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "is_open",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "update_price",
+      "docs": [
+        "Permissionless crank: recomputes Borrow-Limit Price and Liquidation",
+        "Price via the anchor-decay-clamp blend."
+      ],
+      "discriminator": [
+        61,
+        34,
+        117,
+        155,
+        75,
+        34,
+        123,
+        208
+      ],
+      "accounts": [
+        {
+          "name": "cranker",
+          "docs": [
+            "Permissionless: anyone may crank a recompute. Every input this",
+            "instruction trusts (the Pyth update, the keeper-posted DEX",
+            "reference, the regime flag) is independently authenticated --",
+            "Pyth's own signature/verification, or a prior keeper-only",
+            "instruction -- so the caller here doesn't need to be privileged."
+          ],
+          "signer": true
+        },
+        {
+          "name": "regime_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  103,
+                  105,
+                  109,
+                  101,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "regime_state.price_feed_id",
+                "account": "RegimeState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "price_update",
+          "docs": [
+            "Required and read only while the market is open; ignored while",
+            "closed (during closure Vigil deliberately does NOT trust Pyth's",
+            "frozen weekend print -- that's the entire point of the regime",
+            "module). Pass any account while closed; it will simply be skipped.",
+            "",
+            "Deliberately `UncheckedAccount`, not `Account<'info, PriceUpdateV2>`:",
+            "see the `PYTH_RECEIVER_PROGRAM_ID` doc comment above. Ownership and",
+            "deserialization are both checked explicitly in the handler instead."
+          ],
+          "optional": true
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "RegimeState",
+      "discriminator": [
+        19,
+        77,
+        106,
+        40,
+        43,
+        223,
+        190,
+        86
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "StalePythPrice",
+      "msg": "Pyth price update is stale beyond the allowed threshold"
+    },
+    {
+      "code": 6001,
+      "name": "WrongPriceFeed",
+      "msg": "Pyth price feed id does not match the configured AAPLx feed"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidPythPrice",
+      "msg": "Pyth price or confidence is not positive"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidDexReference",
+      "msg": "DEX reference price or liquidity is not positive"
+    },
+    {
+      "code": 6004,
+      "name": "UnauthorizedKeeper",
+      "msg": "Only the configured keeper authority may call this instruction"
+    },
+    {
+      "code": 6005,
+      "name": "RegimeUnchanged",
+      "msg": "Regime is already set to the requested value"
+    },
+    {
+      "code": 6006,
+      "name": "MissingDexReference",
+      "msg": "DEX reference has not been posted yet"
+    },
+    {
+      "code": 6007,
+      "name": "Overflow",
+      "msg": "Checked arithmetic overflow or underflow in oracle math"
+    },
+    {
+      "code": 6008,
+      "name": "NonPositivePrice",
+      "msg": "Price input must be greater than zero"
+    }
+  ],
+  "types": [
+    {
+      "name": "RegimeState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "keeper_authority",
+            "docs": [
+              "Keeper authority allowed to call `set_regime` and `post_dex_reference`."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "pyth_receiver_program",
+            "docs": [
+              "The program that must own the account passed as `update_price`'s",
+              "`price_update`. Set once at `initialize` (production: Pyth's real",
+              "Solana Receiver program, same address on every cluster; local/devnet",
+              "testing: a lightweight mock price-setter program, so tests can",
+              "exercise the open-market path deterministically without depending",
+              "on Hermes). The staleness bound and feed-id check inside",
+              "`update_price` are identical either way -- only the trusted account",
+              "origin differs, the same kind of documented substitution as the",
+              "devnet mock-USDC mint."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "price_feed_id",
+            "docs": [
+              "The Pyth `PriceUpdateV2` feed id this instance tracks (e.g. AAPLx/USD)."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "is_open",
+            "docs": [
+              "True while the underlying market (NYSE hours) is open."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "last_regime_change_ts",
+            "docs": [
+              "Unix timestamp of the most recent `is_open` transition."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "pending_reopen_snap",
+            "docs": [
+              "True only for the single tick immediately following a Closed->Open",
+              "transition, so `update_price` knows to apply the wider reopen clamp",
+              "instead of the normal per-tick clamp."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "anchor_price",
+            "docs": [
+              "Last live Pyth price observed while the market was open -- the",
+              "\"anchor\" the decay function blends away from during closure."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "anchor_ts",
+            "docs": [
+              "Unix timestamp `anchor_price` was captured at."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "dex_reference_price",
+            "docs": [
+              "Most recent keeper-posted DEX TWAP reference price (micro-USD)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "dex_reference_liquidity",
+            "docs": [
+              "Most recent keeper-posted DEX pool liquidity depth (micro-USD),",
+              "used to dampen the DEX reference's influence on the closed blend."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "dex_reference_ts",
+            "docs": [
+              "Unix timestamp the DEX reference was last posted."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "borrow_limit_price",
+            "docs": [
+              "Slow-smoothed, conservative price the lending market uses to compute",
+              "borrow limits."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "liquidation_price",
+            "docs": [
+              "Fast-smoothed, wider-banded price the lending market uses to check",
+              "liquidation eligibility."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "last_update_ts",
+            "docs": [
+              "Unix timestamp the two output prices were last updated."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}
