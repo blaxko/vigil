@@ -87,6 +87,19 @@ export function Dashboard() {
         .rpc();
     });
 
+  const handleFaucet = () =>
+    runTx("Minting test AAPLx...", async () => {
+      if (!wallet.publicKey) throw new Error("Connect your wallet first.");
+      const res = await fetch("/api/faucet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wallet: wallet.publicKey.toBase58() }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Faucet request failed.");
+      return body.signature as string;
+    });
+
   const handleBorrow = () =>
     runTx("Borrowing USDC...", async () => {
       if (!wallet.publicKey) throw new Error("Connect your wallet first.");
@@ -219,7 +232,12 @@ export function Dashboard() {
             <div className="section-title">Your Position</div>
             <div className="row">
               <span className="label">Wallet AAPLx balance</span>
-              <span className="value">{(Number(collateralBalance) / 10 ** COLLATERAL_DECIMALS).toFixed(4)}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span className="value">{(Number(collateralBalance) / 10 ** COLLATERAL_DECIMALS).toFixed(4)}</span>
+                <button disabled={!wallet.connected || !!pending} onClick={handleFaucet} style={{ fontSize: 12, padding: "4px 10px" }}>
+                  Get Test AAPLx
+                </button>
+              </span>
             </div>
             <div className="row">
               <span className="label">Deposited collateral (base units)</span>
