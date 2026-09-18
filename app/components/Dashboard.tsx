@@ -11,6 +11,7 @@ import { AAPLX_MINT, COLLATERAL_DECIMALS, FEED_ID, PRICE_SCALE, USDC_MINT } from
 import { getLendingMarketProgram, getProvider } from "@/lib/anchor";
 import { collateralVaultPda, debtVaultPda, positionPda, regimeStatePda, reservePda, reserveAuthorityPda } from "@/lib/pda";
 import { useVigilState } from "@/lib/useVigilState";
+import { PythMarketRow } from "@/components/PythMarketRow";
 
 const fmtUsd = (micro: BN) => `$${(Number(micro) / PRICE_SCALE).toFixed(2)}`;
 
@@ -172,11 +173,11 @@ export function Dashboard() {
         <div className="glow-blob right" />
       </div>
       <div className="header" style={{ position: "relative", zIndex: 1 }}>
-        <a href="/landing" className="title" style={{ textDecoration: "none" }}>
-          Vigil
+        <a href="/landing" className="title">
+          Vigil<span className="title-sub hide-sm">Dashboard</span>
         </a>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <a href="/replay" style={{ color: "var(--muted)", fontSize: 13 }}>
+          <a href="/replay" className="hdr-link">
             Weekend Replay &rarr;
           </a>
           <WalletMultiButton />
@@ -195,35 +196,66 @@ export function Dashboard() {
 
       {configured && (
         <>
-          <div className="panel" style={{ borderColor: "var(--amber)" }}>
-            <div className="section-title" style={{ color: "var(--amber)" }}>
-              Branch B — Demo Mode
-            </div>
-            <p style={{ color: "var(--muted)", fontSize: 13, margin: "4px 0 0", lineHeight: 1.5 }}>
-              This build has no continuously-running live Hermes keeper verifying real NYSE hours in
-              real time (that off-chain keeper process is separate infrastructure from what&apos;s
-              built here). The regime flag below reflects on-chain state, not a live market-hours
-              check performed at this instant. Every deposit/borrow/repay/withdraw transaction below
-              is still real and unscripted against the deployed devnet program &mdash; only the
-              open/closed input is demo-controlled rather than read from a live keeper.
+          <div className="panel intro-strip">
+            <p>
+              <strong>Vigil</strong> is a lending market for tokenized stocks: deposit AAPLx as collateral and
+              borrow USDC against it &mdash; including nights and weekends, when the stock market is closed
+              and most venues freeze the price.
             </p>
+            <p>
+              Instead of one price, Vigil uses two: a conservative <span style={{ color: "var(--green)" }}>Borrow-Limit
+              Price</span> that caps how much you can borrow, and a wider <span style={{ color: "var(--blue)" }}>Liquidation
+              Price</span> that keeps a thin, easily-moved weekend market from liquidating you unfairly.
+            </p>
+          </div>
+
+          <div className="panel disclosure">
+            <span className="disclosure-tag">Disclosed design choice</span>
+            <h2 className="disclosure-title">Demo mode: market hours set by hand, everything else real</h2>
+            <p className="disclosure-lead">
+              The on-chain open/closed flag is set manually for this demo (Pyth&apos;s real market hours are
+              shown beside it); every deposit, borrow and repay is a real, unscripted transaction on the
+              deployed devnet program.
+            </p>
+            <details>
+              <summary>Details</summary>
+              <p>
+                Vigil&apos;s oracle takes market hours as an input. Feeding it automatically needs a
+                continuously-running off-chain keeper watching real NYSE hours, which is separate
+                infrastructure from the on-chain programs built here. So the regime flag reflects
+                on-chain state, not a live market-hours check performed at this instant. Only that
+                open/closed input is demo-controlled &mdash; the pricing math, the position accounting
+                and every transaction are the real deployed programs.
+              </p>
+            </details>
           </div>
 
           <div className="panel">
             <div className="section-title">Market</div>
             <div className="row">
-              <span className="label">Regime</span>
+              <span className="label">On-chain regime (demo-set)</span>
               <span className={`badge ${regimeState?.isOpen ? "open" : "closed"}`}>
                 {regimeState ? (regimeState.isOpen ? "Open" : "Closed — Converging") : "Loading..."}
               </span>
             </div>
+            <PythMarketRow onchainIsOpen={regimeState ? regimeState.isOpen : null} />
             <div className="row">
               <span className="label">Borrow-Limit Price</span>
               <span className="value" style={{ color: "var(--green)" }}>{regimeState ? fmtUsd(regimeState.borrowLimitPrice) : "—"}</span>
             </div>
+            <div className="gloss">
+              {regimeState
+                ? `When you borrow, each AAPLx of collateral is valued at ${fmtUsd(regimeState.borrowLimitPrice)}.`
+                : "The conservative price your collateral is valued at when you borrow."}
+            </div>
             <div className="row">
               <span className="label">Liquidation Price</span>
               <span className="value" style={{ color: "var(--blue)" }}>{regimeState ? fmtUsd(regimeState.liquidationPrice) : "—"}</span>
+            </div>
+            <div className="gloss">
+              {regimeState
+                ? `Liquidation is checked against ${fmtUsd(regimeState.liquidationPrice)} per AAPLx — deliberately wider, so a brief weekend dip can't liquidate you unfairly.`
+                : "A deliberately wider price used only for liquidation checks."}
             </div>
             {readError && <div className="error">Failed to load on-chain state: {readError}</div>}
           </div>

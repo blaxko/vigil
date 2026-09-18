@@ -3,6 +3,7 @@
 import { useVigilState } from "@/lib/useVigilState";
 import { useCountUp } from "@/lib/useCountUp";
 import { PRICE_SCALE } from "@/lib/constants";
+import { PythMarketRow } from "@/components/PythMarketRow";
 
 function usdValue(micro: number | null): number | null {
   return micro === null ? null : micro / PRICE_SCALE;
@@ -30,7 +31,7 @@ export function LiveHeroPreview() {
     <div className="panel lp-hero-visual">
       <div className="section-title">Live on Devnet</div>
       <div className="row">
-        <span className="label">Regime</span>
+        <span className="label">On-chain regime</span>
         {loaded ? (
           <span className={`badge ${regimeState!.isOpen ? "open" : "closed"}`}>
             {regimeState!.isOpen ? "Open" : "Closed — Converging"}
@@ -39,6 +40,7 @@ export function LiveHeroPreview() {
           <span className="badge closed">Live preview loading&hellip;</span>
         )}
       </div>
+      <PythMarketRow onchainIsOpen={regimeState ? regimeState.isOpen : null} />
       <div className="row">
         <span className="label">Borrow-Limit Price</span>
         <span className="value" style={{ color: "var(--green)" }}>

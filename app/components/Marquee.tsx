@@ -1,4 +1,4 @@
-const ITEMS = ["Solana", "Pyth Network", "Anchor", "Meteora"];
+const ITEMS = ["Solana", "Pyth Network", "Anchor", "Token-2022"];
 
 export function Marquee() {
   // Duplicated once so the CSS animation (translateX -50%) loops seamlessly.
