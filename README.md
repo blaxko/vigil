@@ -310,6 +310,15 @@ would otherwise hide:
   standing in for real lender deposits (no lender-deposit flow exists in
   this MVP; out of scope per the brief).
 
+## Future work / known limitations
+
+- A live keeper could automatically re-run the replay harness against the
+  most recently closed weekend on an ongoing basis, keeping `/replay`
+  continuously current instead of fixed to one historical window. This is
+  explicitly out of scope for this MVP per the brief's Section 6 (no
+  continuously-running keeper) and isn't being built now given the
+  deadline — noted here as an idea for later, not a commitment.
+
 ## Submission checklist (Phase 4)
 
 Everything above this line is built, tested, and verified from within

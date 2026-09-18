@@ -61,6 +61,7 @@ export function Dashboard() {
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastSig, setLastSig] = useState<string | null>(null);
+  const [readError, setReadError] = useState<string | null>(null);
 
   const configured = AAPLX_MINT && USDC_MINT && FEED_ID;
 
@@ -77,12 +78,18 @@ export function Dashboard() {
     try {
       const regimeAccountInfo = await connection.getAccountInfo(regimeStateAddr);
       if (regimeAccountInfo) {
-        const decoded = regimeProgram.coder.accounts.decode("RegimeState", regimeAccountInfo.data);
+        // Anchor's Program constructor normalizes IDL account names to
+        // camelCase internally (RegimeState -> regimeState), even though
+        // the IDL file and the Rust struct itself use PascalCase -- the
+        // coder's .decode() must be called with that normalized name or
+        // it throws "Account not found" despite the account genuinely
+        // existing and the discriminator matching.
+        const decoded = regimeProgram.coder.accounts.decode("regimeState", regimeAccountInfo.data);
         setRegimeState(decoded as RegimeState);
       }
       const reserveAccountInfo = await connection.getAccountInfo(reserveAddr);
       if (reserveAccountInfo) {
-        const decoded = lendingProgram.coder.accounts.decode("Reserve", reserveAccountInfo.data);
+        const decoded = lendingProgram.coder.accounts.decode("reserve", reserveAccountInfo.data);
         setReserve(decoded as Reserve);
       }
 
@@ -90,7 +97,7 @@ export function Dashboard() {
         const posAddr = positionPda(reserveAddr, wallet.publicKey);
         const posInfo = await connection.getAccountInfo(posAddr);
         if (posInfo) {
-          const decoded = lendingProgram.coder.accounts.decode("Position", posInfo.data);
+          const decoded = lendingProgram.coder.accounts.decode("position", posInfo.data);
           setPosition(decoded as Position);
         } else {
           setPosition(null);
@@ -100,10 +107,16 @@ export function Dashboard() {
         const bal = await connection.getTokenAccountBalance(ata).catch(() => null);
         setCollateralBalance(bal ? BigInt(bal.value.amount) : BigInt(0));
       }
+      setReadError(null);
     } catch (e) {
       // Read-side failures shouldn't blank the whole dashboard silently --
-      // surface them, but don't block the UI from rendering what it has.
+      // surface them on screen (not just console.error, which is what let
+      // a RegimeState decode bug hide behind an indefinite "Loading..."
+      // instead of a visible error), but don't block the UI from
+      // rendering whatever state it already has.
+      const msg = e instanceof Error ? e.message : String(e);
       console.error("dashboard refresh failed", e);
+      setReadError(msg);
     }
   }, [connection, wallet, configured]);
 
@@ -275,6 +288,7 @@ export function Dashboard() {
               <span className="label">Liquidation Price</span>
               <span className="value">{regimeState ? fmtUsd(regimeState.liquidationPrice) : "—"}</span>
             </div>
+            {readError && <div className="error">Failed to load on-chain state: {readError}</div>}
           </div>
 
           <div className="panel">
