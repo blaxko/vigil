@@ -22,7 +22,8 @@ function describeTxError(err: unknown): string {
   if (/User rejected/i.test(msg)) return "Transaction rejected in wallet.";
   if (/insufficient/i.test(msg) && /lamports/i.test(msg)) return "Insufficient SOL for transaction fees.";
   if (/0x1\b/.test(msg) || /insufficient funds/i.test(msg)) return "Insufficient token balance.";
-  if (/StalePythPrice|StaleOraclePrices/.test(msg)) return "Price is stale -- wait for the next crank and try again.";
+  if (/StalePythPrice|StaleOraclePrices/.test(msg))
+    return "Demo mode: oracle refresh is manual, not automated — this position needs a fresh price post before borrowing. Deposits and repayments are unaffected.";
   if (/BorrowLimitExceeded/.test(msg)) return "Amount exceeds your current borrow limit.";
   if (/WithdrawalExceedsLimit/.test(msg)) return "Withdrawal would leave the position under-collateralized.";
   if (/PositionHoldTimeActive/.test(msg)) return "Position is still within its minimum hold time after the last borrow.";
