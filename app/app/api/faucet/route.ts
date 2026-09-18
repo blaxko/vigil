@@ -14,7 +14,7 @@ import { TOKEN_2022_PROGRAM_ID, getOrCreateAssociatedTokenAccount, mintTo } from
 
 const RPC_ENDPOINT = process.env.NEXT_PUBLIC_RPC_ENDPOINT ?? "https://api.devnet.solana.com";
 const AAPLX_MINT = process.env.NEXT_PUBLIC_AAPLX_MINT;
-const FAUCET_AMOUNT_BASE = 100_000_000n; // 100 AAPLx at 6 decimals
+const FAUCET_AMOUNT_BASE = BigInt(100_000_000); // 100 AAPLx at 6 decimals
 
 function loadMintAuthority(): Keypair {
   const raw = process.env.MINT_AUTHORITY_SECRET_KEY;
