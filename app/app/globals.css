@@ -721,3 +721,17 @@ button.secondary {
     display: none;
   }
 }
+
+/* Regime badges: never break mid-phrase ("Closed — / Converging"). */
+.badge-nowrap {
+  white-space: nowrap;
+}
+
+/* Landing nav: inner edges line up with the shared content column instead of
+   sitting at the far edges of a wide viewport. */
+@media (min-width: 1100px) {
+  .lp-nav {
+    padding-left: calc((100vw - var(--content-w)) / 2 + 24px);
+    padding-right: calc((100vw - var(--content-w)) / 2 + 24px);
+  }
+}

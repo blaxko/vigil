@@ -26,9 +26,17 @@ export function PythMarketRow({ onchainIsOpen }: { onchainIsOpen?: boolean | nul
   } else if (status === "error" || !data) {
     badge = <span className="badge closed">Unavailable</span>;
   } else if (data.isOpen) {
-    badge = <span className="badge open">Open &middot; closes {fmtUtc(data.nextClose)}</span>;
+    badge = (
+      <span className="badge open">
+        Open &middot; <span style={{ whiteSpace: "nowrap" }}>closes {fmtUtc(data.nextClose)}</span>
+      </span>
+    );
   } else {
-    badge = <span className="badge closed">Closed &middot; opens {fmtUtc(data.nextOpen)}</span>;
+    badge = (
+      <span className="badge closed">
+        Closed &middot; <span style={{ whiteSpace: "nowrap" }}>opens {fmtUtc(data.nextOpen)}</span>
+      </span>
+    );
   }
 
   const mismatch = data && onchainIsOpen !== undefined && onchainIsOpen !== null && data.isOpen !== onchainIsOpen;
