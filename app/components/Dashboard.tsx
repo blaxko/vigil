@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { BN } from "@coral-xyz/anchor";
@@ -8,24 +8,9 @@ import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync } from "@solana/spl-token";
 
 import { AAPLX_MINT, COLLATERAL_DECIMALS, FEED_ID, PRICE_SCALE, USDC_MINT } from "@/lib/constants";
-import { getLendingMarketProgram, getProvider, getReadOnlyProvider, getRegimeOracleProgram } from "@/lib/anchor";
+import { getLendingMarketProgram, getProvider } from "@/lib/anchor";
 import { collateralVaultPda, debtVaultPda, positionPda, regimeStatePda, reservePda, reserveAuthorityPda } from "@/lib/pda";
-
-type RegimeState = {
-  isOpen: boolean;
-  borrowLimitPrice: BN;
-  liquidationPrice: BN;
-  lastUpdateTs: BN;
-};
-
-type Position = {
-  collateralBase: BN;
-  debtAmount: BN;
-};
-
-type Reserve = {
-  maxLtvBps: number;
-};
+import { useVigilState } from "@/lib/useVigilState";
 
 const fmtUsd = (micro: BN) => `$${(Number(micro) / PRICE_SCALE).toFixed(2)}`;
 
@@ -48,11 +33,7 @@ function describeTxError(err: unknown): string {
 export function Dashboard() {
   const { connection } = useConnection();
   const wallet = useWallet();
-
-  const [regimeState, setRegimeState] = useState<RegimeState | null>(null);
-  const [position, setPosition] = useState<Position | null>(null);
-  const [reserve, setReserve] = useState<Reserve | null>(null);
-  const [collateralBalance, setCollateralBalance] = useState<bigint>(BigInt(0));
+  const { configured, regimeState, position, reserve, collateralBalance, readError, refresh } = useVigilState();
 
   const [depositAmount, setDepositAmount] = useState("");
   const [borrowAmount, setBorrowAmount] = useState("");
@@ -61,70 +42,6 @@ export function Dashboard() {
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastSig, setLastSig] = useState<string | null>(null);
-  const [readError, setReadError] = useState<string | null>(null);
-
-  const configured = AAPLX_MINT && USDC_MINT && FEED_ID;
-
-  const refresh = useCallback(async () => {
-    if (!configured) return;
-
-    const feedId = FEED_ID!;
-    const regimeStateAddr = regimeStatePda(feedId);
-    const reserveAddr = reservePda(AAPLX_MINT!);
-    const readOnlyProvider = getReadOnlyProvider(connection);
-    const regimeProgram = getRegimeOracleProgram(readOnlyProvider);
-    const lendingProgram = getLendingMarketProgram(readOnlyProvider);
-
-    try {
-      const regimeAccountInfo = await connection.getAccountInfo(regimeStateAddr);
-      if (regimeAccountInfo) {
-        // Anchor's Program constructor normalizes IDL account names to
-        // camelCase internally (RegimeState -> regimeState), even though
-        // the IDL file and the Rust struct itself use PascalCase -- the
-        // coder's .decode() must be called with that normalized name or
-        // it throws "Account not found" despite the account genuinely
-        // existing and the discriminator matching.
-        const decoded = regimeProgram.coder.accounts.decode("regimeState", regimeAccountInfo.data);
-        setRegimeState(decoded as RegimeState);
-      }
-      const reserveAccountInfo = await connection.getAccountInfo(reserveAddr);
-      if (reserveAccountInfo) {
-        const decoded = lendingProgram.coder.accounts.decode("reserve", reserveAccountInfo.data);
-        setReserve(decoded as Reserve);
-      }
-
-      if (wallet.publicKey) {
-        const posAddr = positionPda(reserveAddr, wallet.publicKey);
-        const posInfo = await connection.getAccountInfo(posAddr);
-        if (posInfo) {
-          const decoded = lendingProgram.coder.accounts.decode("position", posInfo.data);
-          setPosition(decoded as Position);
-        } else {
-          setPosition(null);
-        }
-
-        const ata = getAssociatedTokenAddressSync(AAPLX_MINT!, wallet.publicKey, false, TOKEN_2022_PROGRAM_ID);
-        const bal = await connection.getTokenAccountBalance(ata).catch(() => null);
-        setCollateralBalance(bal ? BigInt(bal.value.amount) : BigInt(0));
-      }
-      setReadError(null);
-    } catch (e) {
-      // Read-side failures shouldn't blank the whole dashboard silently --
-      // surface them on screen (not just console.error, which is what let
-      // a RegimeState decode bug hide behind an indefinite "Loading..."
-      // instead of a visible error), but don't block the UI from
-      // rendering whatever state it already has.
-      const msg = e instanceof Error ? e.message : String(e);
-      console.error("dashboard refresh failed", e);
-      setReadError(msg);
-    }
-  }, [connection, wallet, configured]);
-
-  useEffect(() => {
-    refresh();
-    const id = setInterval(refresh, 5000);
-    return () => clearInterval(id);
-  }, [refresh]);
 
   const runTx = async (label: string, fn: () => Promise<string>) => {
     setError(null);
@@ -237,16 +154,23 @@ export function Dashboard() {
 
   return (
     <div className="page">
-      <div className="header">
-        <div className="title">Vigil</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <a href="/replay" style={{ color: "#8a90a2", fontSize: 13 }}>
+      <div className="glow-field">
+        <div className="glow-blob left" />
+        <div className="glow-blob right" />
+      </div>
+      <div className="header" style={{ position: "relative", zIndex: 1 }}>
+        <a href="/landing" className="title" style={{ textDecoration: "none" }}>
+          Vigil
+        </a>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <a href="/replay" style={{ color: "var(--muted)", fontSize: 13 }}>
             Weekend Replay &rarr;
           </a>
           <WalletMultiButton />
         </div>
       </div>
 
+      <div style={{ position: "relative", zIndex: 1 }}>
       {!configured && (
         <div className="panel">
           <div className="error">
@@ -258,11 +182,11 @@ export function Dashboard() {
 
       {configured && (
         <>
-          <div className="panel" style={{ borderColor: "#e0a929" }}>
-            <div className="section-title" style={{ color: "#e0a929" }}>
+          <div className="panel" style={{ borderColor: "var(--amber)" }}>
+            <div className="section-title" style={{ color: "var(--amber)" }}>
               Branch B — Demo Mode
             </div>
-            <p style={{ color: "#8a90a2", fontSize: 13, margin: "4px 0 0", lineHeight: 1.5 }}>
+            <p style={{ color: "var(--muted)", fontSize: 13, margin: "4px 0 0", lineHeight: 1.5 }}>
               This build has no continuously-running live Hermes keeper verifying real NYSE hours in
               real time (that off-chain keeper process is separate infrastructure from what&apos;s
               built here). The regime flag below reflects on-chain state, not a live market-hours
@@ -282,11 +206,11 @@ export function Dashboard() {
             </div>
             <div className="row">
               <span className="label">Borrow-Limit Price</span>
-              <span className="value">{regimeState ? fmtUsd(regimeState.borrowLimitPrice) : "—"}</span>
+              <span className="value" style={{ color: "var(--green)" }}>{regimeState ? fmtUsd(regimeState.borrowLimitPrice) : "—"}</span>
             </div>
             <div className="row">
               <span className="label">Liquidation Price</span>
-              <span className="value">{regimeState ? fmtUsd(regimeState.liquidationPrice) : "—"}</span>
+              <span className="value" style={{ color: "var(--blue)" }}>{regimeState ? fmtUsd(regimeState.liquidationPrice) : "—"}</span>
             </div>
             {readError && <div className="error">Failed to load on-chain state: {readError}</div>}
           </div>
@@ -350,6 +274,7 @@ export function Dashboard() {
           )}
         </>
       )}
+      </div>
     </div>
   );
 }
