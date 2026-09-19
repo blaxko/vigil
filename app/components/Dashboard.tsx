@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { BN } from "@coral-xyz/anchor";
-import { PublicKey, SystemProgram } from "@solana/web3.js";
+import { AnchorProvider, BN } from "@coral-xyz/anchor";
+import { PublicKey, SystemProgram, Transaction, VersionedTransaction } from "@solana/web3.js";
 import {
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
@@ -20,12 +20,54 @@ import { PythMarketRow } from "@/components/PythMarketRow";
 
 const fmtUsd = (micro: BN) => `$${(Number(micro) / PRICE_SCALE).toFixed(2)}`;
 
+/** A transaction that failed OUR pre-flight simulation. Carries the program
+ * logs so the UI can show the real reason instead of only the wallet's generic
+ * "simulation failed" warning. */
+class SimulationError extends Error {
+  logs: string[];
+  constructor(err: unknown, logs: string[]) {
+    super("Simulation failed. " + JSON.stringify(err));
+    // Some failures (e.g. the fee payer account not existing) come back with no
+    // program logs at all; keep the raw error so the details are never empty.
+    this.logs = logs.length ? logs : ["Simulation error: " + JSON.stringify(err)];
+  }
+}
+
+function logsOf(err: unknown): string[] {
+  if (err instanceof SimulationError) return err.logs;
+  const l = (err as { logs?: unknown } | null)?.logs;
+  return Array.isArray(l) ? l.filter((x): x is string => typeof x === "string") : [];
+}
+
+/** Simulates the transaction on our own devnet connection BEFORE asking the
+ * wallet to sign. If it would fail we stop here with the real program logs; a
+ * wallet's own simulation of a failing transaction is what produces its scary
+ * "Transaction simulation failed" / "dApp could be malicious" warnings, and
+ * those tell the user nothing about the cause. */
+async function sendChecked(provider: AnchorProvider, tx: Transaction): Promise<string> {
+  const { connection, wallet } = provider;
+  tx.feePayer = wallet.publicKey;
+  tx.recentBlockhash = (await connection.getLatestBlockhash("confirmed")).blockhash;
+  const sim = await connection.simulateTransaction(new VersionedTransaction(tx.compileMessage()), {
+    sigVerify: false,
+    commitment: "confirmed",
+  });
+  if (sim.value.err) throw new SimulationError(sim.value.err, sim.value.logs ?? []);
+  return provider.sendAndConfirm(tx);
+}
+
 /** Turns a thrown Anchor/web3.js error into a message a user can act on,
  * instead of a raw stack trace or an indefinite spinner. */
 function describeTxError(err: unknown): string {
-  const msg = err instanceof Error ? err.message : String(err);
+  const logs = logsOf(err);
+  const msg = [err instanceof Error ? err.message : String(err), ...logs].join("\n");
   if (/User rejected/i.test(msg)) return "Transaction rejected in wallet.";
-  if (/insufficient/i.test(msg) && /lamports/i.test(msg)) return "Insufficient SOL for transaction fees.";
+  if (
+    /AccountNotFound|InsufficientFundsForFee|InsufficientFundsForRent|no record of a prior credit/i.test(msg) ||
+    (/insufficient/i.test(msg) && /lamports/i.test(msg))
+  )
+    return "Your wallet does not have enough devnet SOL for fees and account rent (a first deposit or borrow creates accounts that cost a few thousandths of a SOL). Get some at faucet.solana.com, then try again.";
+  if (/AccountNotInitialized/.test(msg)) return "A required token account does not exist yet for this wallet.";
   if (/0x1\b/.test(msg) || /insufficient funds/i.test(msg)) return "Insufficient token balance.";
   if (/StalePythPrice|StaleOraclePrices/.test(msg))
     return "Demo mode: the automatic oracle refresh did not run, so the on-chain price is stale. It only works while the regime is closed, and it re-posts a stored replay reference price, not a live one. Deposits and repayments are unaffected.";
@@ -33,8 +75,11 @@ function describeTxError(err: unknown): string {
   if (/WithdrawalExceedsLimit/.test(msg)) return "Withdrawal would leave the position under-collateralized.";
   if (/PositionHoldTimeActive/.test(msg)) return "Position is still within its minimum hold time after the last borrow.";
   if (/RepayExceedsDebt/.test(msg)) return "Repay amount exceeds outstanding debt.";
-  if (/Simulation failed/i.test(msg)) return `Transaction simulation failed: ${msg.split("\n")[0]}`;
-  return msg;
+  if (/Simulation failed/i.test(msg)) {
+    const line = logs.find((l) => /Error Message|Error Code|failed:|custom program error/i.test(l));
+    return `Transaction simulation failed${line ? ": " + line.replace(/^Program log: /, "") : "."}`;
+  }
+  return msg.split("\n")[0];
 }
 
 /** Demo mode: asks the server to refresh the oracle before Borrow, because
@@ -62,10 +107,12 @@ export function Dashboard() {
 
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorLogs, setErrorLogs] = useState<string[]>([]);
   const [lastSig, setLastSig] = useState<string | null>(null);
 
   const runTx = async (label: string, fn: () => Promise<string>) => {
     setError(null);
+    setErrorLogs([]);
     setLastSig(null);
     setPending(label);
     try {
@@ -73,7 +120,9 @@ export function Dashboard() {
       setLastSig(sig);
       await refresh();
     } catch (e) {
+      console.error("[vigil] transaction failed", e);
       setError(describeTxError(e));
+      setErrorLogs(logsOf(e));
     } finally {
       setPending(null);
     }
@@ -93,7 +142,7 @@ export function Dashboard() {
       const ata = getAssociatedTokenAddressSync(AAPLX_MINT!, wallet.publicKey, false, TOKEN_2022_PROGRAM_ID);
       const amountBase = new BN(Math.round(amount * 10 ** COLLATERAL_DECIMALS));
 
-      return program.methods
+      const tx = await program.methods
         .deposit(amountBase)
         .accounts({
           owner: wallet.publicKey,
@@ -105,7 +154,8 @@ export function Dashboard() {
           tokenProgram: TOKEN_2022_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
         })
-        .rpc();
+        .transaction();
+      return sendChecked(provider, tx);
     });
 
   const handleFaucet = () =>
@@ -140,7 +190,7 @@ export function Dashboard() {
       const ownerDebtAta = getAssociatedTokenAddressSync(USDC_MINT!, wallet.publicKey, false, TOKEN_PROGRAM_ID);
       const amountBase = new BN(Math.round(amount * 10 ** 6));
 
-      return program.methods
+      const tx = await program.methods
         .borrow(amountBase)
         // A first-time borrower has no USDC token account yet and the program
         // requires it to exist; create it (no-op if it already does) in the
@@ -160,7 +210,8 @@ export function Dashboard() {
           reserveAuthority,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
-        .rpc();
+        .transaction();
+      return sendChecked(provider, tx);
     });
 
   const handleRepay = () =>
@@ -177,7 +228,7 @@ export function Dashboard() {
       const ownerDebtAta = getAssociatedTokenAddressSync(USDC_MINT!, wallet.publicKey, false, TOKEN_PROGRAM_ID);
       const amountBase = new BN(Math.round(amount * 10 ** 6));
 
-      return program.methods
+      const tx = await program.methods
         .repay(amountBase)
         .accounts({
           owner: wallet.publicKey,
@@ -188,7 +239,8 @@ export function Dashboard() {
           debtVault,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
-        .rpc();
+        .transaction();
+      return sendChecked(provider, tx);
     });
 
   const maxBorrowable =
@@ -236,6 +288,16 @@ export function Dashboard() {
               Instead of one price, Vigil uses two: a conservative <span style={{ color: "var(--green)" }}>Borrow-Limit
               Price</span> that caps how much you can borrow, and a wider <span style={{ color: "var(--blue)" }}>Liquidation
               Price</span> that keeps a thin, easily-moved weekend market from liquidating you unfairly.
+            </p>
+          </div>
+
+          <div className="panel notice-strip">
+            <span className="notice-tag">Before you connect</span>
+            <p>
+              Vigil runs on Solana <strong>devnet</strong>. Switch your wallet to devnet first (Phantom: Settings &rarr;
+              Developer Settings &rarr; Testnet Mode; Solflare: Settings &rarr; Network &rarr; Devnet) and keep a little
+              devnet SOL for fees (<a href="https://faucet.solana.com" target="_blank" rel="noreferrer">faucet.solana.com</a>).
+              &ldquo;Get Test AAPLx&rdquo; mints the test token only, not SOL.
             </p>
           </div>
 
@@ -354,6 +416,12 @@ export function Dashboard() {
 
           {pending && <div className="pending">{pending}</div>}
           {error && <div className="error">{error}</div>}
+          {errorLogs.length > 0 && (
+            <details className="tx-logs">
+              <summary>Simulation logs</summary>
+              <pre>{errorLogs.join("\n")}</pre>
+            </details>
+          )}
           {lastSig && (
             <div className="success">
               Confirmed: <a href={`https://explorer.solana.com/tx/${lastSig}?cluster=devnet`} target="_blank" rel="noreferrer" style={{ color: "inherit" }}>{lastSig}</a>

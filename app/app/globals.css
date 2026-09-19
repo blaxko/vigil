@@ -735,3 +735,49 @@ button.secondary {
     padding-right: calc((100vw - var(--content-w)) / 2 + 24px);
   }
 }
+
+/* Pre-connect network notice + failed-transaction logs */
+.notice-strip p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.notice-strip a {
+  color: var(--blue);
+}
+.notice-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--blue);
+  background: rgba(91, 140, 255, 0.14);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+.tx-logs {
+  margin-top: 8px;
+}
+.tx-logs summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+.tx-logs pre {
+  background: var(--inset);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
