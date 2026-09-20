@@ -3,35 +3,28 @@ import { Reveal } from "@/components/Reveal";
 import { LiveNumber } from "@/components/LiveNumber";
 import { ReplaySparkChart } from "@/components/ReplaySparkChart";
 import comparison from "@/public/comparison-output.json";
-import stress from "@/public/stress-output.json";
-
-const band = comparison.bandModel.sensitivity.find((s) => s.bandPct === comparison.bandModel.drawnBandPct)!;
 
 /* ------------------------------------------------------------------ */
-/* Demo-mode disclosure, directly under the hero                       */
+/* Deployment status, directly under the hero                          */
 /* ------------------------------------------------------------------ */
 
-export function DemoModeBand() {
+export function DeploymentStatus() {
   return (
-    <div className="lp-container demo-band-wrap">
-      <div className="panel disclosure demo-band">
-        <span className="disclosure-tag">Disclosed design choice</span>
-        <h2 className="disclosure-title">Demo mode: market hours set by hand, price refresh uses stored replay data</h2>
-        <p className="disclosure-lead">
-          The on-chain open/closed flag is set manually (Pyth&apos;s real market hours are shown beside it), and
-          Borrow triggers an oracle refresh that re-posts a stored replay reference price, not a live one. Every
-          deposit, borrow and repay is still a real, unscripted transaction on the deployed devnet program.
+    <div className="lp-container status-wrap">
+      <div className="status-bar">
+        <span className="status-badge">Devnet</span>
+        <p className="status-text">
+          Test tokens with no real value. Market hours are set manually in this deployment.
         </p>
-        <details>
+        <details className="status-details">
           <summary>Details</summary>
           <p>
             Vigil&apos;s oracle takes market hours as an input. Feeding it automatically needs a
-            continuously-running off-chain keeper watching real NYSE hours, which is separate infrastructure from
-            the on-chain programs built here. So the regime flag reflects on-chain state, not a live market-hours
-            check performed at this instant. Only that open/closed input is demo-controlled &mdash; the pricing
-            math, the position accounting and every transaction are the real deployed programs. Likewise, with no
-            keeper running, pressing Borrow first triggers a demo oracle refresh that re-posts the DEX reference
-            price already stored on-chain from the Sept 11&ndash;14 replay: a stored price, not a live one.
+            continuously-running keeper watching real exchange hours, which is separate infrastructure from the
+            on-chain programs, so the open/closed flag is set by hand here and Pyth&apos;s real market hours are
+            shown beside it. Borrow also triggers an oracle refresh that re-posts a reference price stored on-chain
+            from the Sept 11&ndash;14 replay, not a live one. The pricing math, the position accounting and every
+            transaction are the real deployed programs.
           </p>
         </details>
       </div>
@@ -52,9 +45,7 @@ export function MechanismSection() {
             <span className="section-kicker">How pricing works</span>
             <h2 className="lp-section-title">Two prices, moving in opposite directions</h2>
             <p className="lp-section-lead">
-              Through a closure the price decays from the last live print toward a liquidity-weighted DEX reference,
-              clamped per update so no single update can move it too far. Over-borrowing and unjust liquidation are
-              opposite failure modes, so they never share one number.
+              Over-borrowing and unjust liquidation are opposite risks, so they never share one number.
             </p>
           </div>
         </Reveal>
@@ -65,9 +56,8 @@ export function MechanismSection() {
               <span className="tag tag-green">Borrow-Limit Price</span>
               <h3 className="tag-card-title">Tightens through closures</h3>
               <p className="tag-card-body">
-                The conservative price that sizes how much you can borrow. It is slow-moving (5% of the gap per
-                update) and, as a closure goes on, it tightens by up to 8% over the first hour, so it never chases a
-                thin weekend market upward.
+                The conservative price that sizes how much you can borrow, so it never chases a thin weekend
+                market upward.
               </p>
               <div className="tag-card-live">
                 <span>Live now</span>
@@ -80,8 +70,8 @@ export function MechanismSection() {
               <span className="tag tag-blue">Liquidation Price</span>
               <h3 className="tag-card-title">Widens through closures</h3>
               <p className="tag-card-body">
-                The forgiving price used only to decide liquidation. It moves fast (15% of the gap per update) and,
-                as a closure goes on, it widens by up to 12%, so a brief weekend dip cannot liquidate you unfairly.
+                The forgiving price that decides liquidation, so a brief weekend dip cannot liquidate you
+                unfairly.
               </p>
               <div className="tag-card-live">
                 <span>Live now</span>
@@ -100,10 +90,9 @@ export function MechanismSection() {
 /* ------------------------------------------------------------------ */
 
 const PROOF_FIGURES = [
-  { value: "149", label: "real on-chain replay ticks" },
+  { value: "149", label: "on-chain price updates" },
   { value: "298 / 298", label: "signatures finalized" },
-  { value: "27", label: "Rust unit tests passing" },
-  { value: "6", label: "real bugs found and fixed, logged" },
+  { value: "27", label: "unit tests passing" },
 ];
 
 export function ProofBand() {
@@ -113,12 +102,11 @@ export function ProofBand() {
       <div className="lp-container" style={{ position: "relative", zIndex: 1 }}>
         <Reveal>
           <div className="lp-section-head">
-            <span className="section-kicker">Verified, not claimed</span>
+            <span className="section-kicker">Real data</span>
             <h2 className="lp-section-title">One real weekend, replayed on-chain</h2>
             <p className="lp-section-lead">
-              The actual Friday-close-to-Monday-open window of Sept 11&ndash;14, 2026, driven by real AAPLx/USDC
-              trading data and run through the deployed devnet programs &mdash; next to three other approaches
-              computed from that same data.
+              The Friday-close-to-Monday-open window of Sept 11&ndash;14, 2026, run through the deployed programs
+              on real market data.
             </p>
           </div>
         </Reveal>
@@ -139,9 +127,7 @@ export function ProofBand() {
               </div>
               <p className="proof-note">
                 A frozen-price venue would have sat flat all weekend, then jumped{" "}
-                {comparison.frozenVaultDiscontinuousJumpPct.toFixed(2)}% the instant it reopened. A &plusmn;
-                {band.bandPct}% deviation-band oracle would have held a stale price on {band.trippedTicks} of{" "}
-                {band.totalTicks} ticks.
+                {comparison.frozenVaultDiscontinuousJumpPct.toFixed(2)}% the instant it reopened.
               </p>
               <Link href="/replay" className="btn-outline">
                 See the full replay
@@ -159,18 +145,10 @@ export function ProofBand() {
 /* ------------------------------------------------------------------ */
 
 const JOURNEY = [
-  { n: "01", t: "Deposit", d: "You hold tokenized AAPLx and don't want to sell it. Deposit it as collateral." },
-  {
-    n: "02",
-    t: "Borrow",
-    d: "Borrow USDC against it, up to the Borrow-Limit Price — including Saturday, when the stock market is shut.",
-  },
-  {
-    n: "03",
-    t: "Hold through the closure",
-    d: "The Borrow-Limit tightens and the Liquidation Price widens on their own. Nothing for you to do.",
-  },
-  { n: "04", t: "Repay and withdraw", d: "Repay any amount up to your debt and take your AAPLx back." },
+  { n: "01", t: "Deposit", d: "Put up tokenized AAPLx as collateral without selling it." },
+  { n: "02", t: "Borrow", d: "Draw USDC against it, including on a Saturday." },
+  { n: "03", t: "Hold through the closure", d: "Pricing adapts on its own. Nothing for you to do." },
+  { n: "04", t: "Repay and withdraw", d: "Repay any amount and take your AAPLx back." },
 ];
 
 export function AppShowcase() {
@@ -179,7 +157,7 @@ export function AppShowcase() {
       <div className="lp-container">
         <Reveal>
           <div className="lp-section-head">
-            <span className="section-kicker">The real product</span>
+            <span className="section-kicker">The product</span>
             <h2 className="lp-section-title">What you actually do</h2>
           </div>
         </Reveal>
@@ -213,7 +191,7 @@ export function AppShowcase() {
                   width={1920}
                   height={2166}
                   loading="lazy"
-                  alt="The Vigil dashboard with a connected wallet: live Market panel, a position of 8 AAPLx deposited with 3 USDC borrowed, and deposit, borrow and repay forms."
+                  alt="The Vigil dashboard with a connected wallet: live market panel, a position of 8 AAPLx deposited with 3 USDC borrowed, and deposit, borrow and repay forms."
                 />
               </figure>
               <figure className="phone-frame">
@@ -229,15 +207,9 @@ export function AppShowcase() {
           </Reveal>
         </div>
 
-        <p className="app-caption">
-          On devnet with test tokens: the AAPLx here is a test mint from the faucet, the USDC is a mock token, and
-          Borrow first refreshes the oracle from a stored replay price. A cropped, unedited capture of a real devnet
-          session on 2026-09-20 &mdash; the prices in it may have moved since.
-        </p>
-
-        <div className="lp-cta-row" style={{ marginTop: 26, marginBottom: 0 }}>
+        <div className="lp-cta-row" style={{ marginTop: 34, marginBottom: 0 }}>
           <Link href="/" className="btn-gradient">
-            Open the live dashboard
+            Open the dashboard
           </Link>
         </div>
       </div>
@@ -246,72 +218,29 @@ export function AppShowcase() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Secondary: context (Why Solana + Where Vigil fits, merged)          */
+/* Secondary: context                                                  */
 /* ------------------------------------------------------------------ */
 
 export function ContextSection() {
   return (
     <section className="lp-section section-minor band-inset" id="context">
       <div className="lp-container">
-        <Reveal>
-          <div className="lp-section-head minor-head">
-            <h2 className="lp-section-title">Why this, here</h2>
-          </div>
-        </Reveal>
-
         <div className="context-grid">
           <Reveal>
             <div className="context-item">
-              <b>Built on Solana, not just deployed there</b>
+              <b>Built on Solana</b>
               <p>
-                The real AAPLx token and its liquid AAPLx/USDC market already trade here. Tokenized stocks adjust for
-                splits through a Token-2022 multiplier, which Vigil reads on-chain rather than patching off-chain.
-                And continuous pricing means writing state all weekend &mdash; the replay posts 149 ticks across one
-                closure, which only works with low fees.
+                Tokenized stocks already trade here, and their Token-2022 split multiplier is read on-chain.
+                Continuous pricing means writing state all weekend, which only works with low fees.
               </p>
             </div>
           </Reveal>
           <Reveal delay={60}>
             <div className="context-item">
-              <b>An oracle module, not just a lending market</b>
+              <b>An oracle, not just a lending market</b>
               <p>
-                Vigil ships with a lending market so the oracle can be seen working end to end, but the regime-aware
-                oracle is its own on-chain program. A lender reads two prices and a regime flag from it; the lending
-                logic here is one consumer, not a dependency.
-              </p>
-            </div>
-          </Reveal>
-          <Reveal delay={120}>
-            <div className="context-item">
-              <b>What the guidance already says</b>
-              <p>
-                Chainlink&apos;s{" "}
-                <a
-                  href="https://docs.chain.link/data-feeds/tokenized-equity-feeds"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-link"
-                >
-                  tokenized-equity documentation
-                </a>{" "}
-                tells integrators to treat weekends and holidays as an expected state and to set deviation limits,
-                leaving the thresholds to each protocol. It prescribes no number. Common answers are fixed
-                conservative LTVs, hard staleness pauses, or a deviation band. Vigil is one concrete answer to the
-                closed-market half of that.
-              </p>
-            </div>
-          </Reveal>
-          <Reveal delay={180}>
-            <div className="context-item">
-              <b>Same hackathon, complementary scope</b>
-              <p>
-                Sable (
-                <a href="https://github.com/Mgabal/Stock-Lend" target="_blank" rel="noreferrer" className="inline-link">
-                  Mgabal/Stock-Lend
-                </a>
-                ) discloses in its README that its lending market uses a seeded reference rate, not a live oracle
-                feed, and scopes real pricing out as future work. Pricing under a closed market is the layer Vigil
-                focuses on.
+                The regime-aware oracle is its own on-chain program. A lender reads two prices and a regime flag
+                from it; the lending market here is one consumer of it.
               </p>
             </div>
           </Reveal>
@@ -322,19 +251,17 @@ export function ContextSection() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Secondary: FAQ + the remaining verified figures + what this is not  */
+/* Secondary: FAQ + deployment status                                  */
 /* ------------------------------------------------------------------ */
 
 const FAQ: { q: string; a: React.ReactNode }[] = [
   {
-    q: "What is Vigil, actually?",
+    q: "What is Vigil?",
     a: (
       <>
-        A lending market for tokenized stocks on Solana with a different kind of oracle. You deposit a tokenized
-        stock (AAPLx here) as collateral and borrow USDC against it. Because stocks stop trading on nights and
-        weekends, Vigil prices your collateral with two numbers that move in opposite directions while the market is
-        closed: a conservative Borrow-Limit Price and a forgiving Liquidation Price. It is a hackathon build for
-        Stocklana, running on devnet.
+        A lending market for tokenized stocks on Solana. You deposit a tokenized stock as collateral and borrow
+        USDC against it. Because stocks stop trading at night and on weekends, Vigil prices collateral with two
+        numbers that move in opposite directions while the market is closed, instead of freezing one.
       </>
     ),
   },
@@ -342,43 +269,19 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     q: "Is real money involved?",
     a: (
       <>
-        No. Everything runs on Solana devnet. The AAPLx on the dashboard is a test token this project mints from a
-        faucet, the USDC is a mock token, and the SOL is devnet SOL with no value. The real mainnet AAPLx is used
-        only as a source of historical prices for the replay. Nothing you do here can gain or lose real funds.
+        No. This runs on Solana devnet. The AAPLx is a test token you mint from the faucet, the USDC is a mock
+        token, and devnet SOL has no value. Nothing here can gain or lose real funds.
       </>
     ),
   },
   {
-    q: "Why do the Borrow-Limit and Liquidation numbers keep changing?",
+    q: "Why do the two prices keep changing?",
     a: (
       <>
-        Because no keeper is running. The prices only update when something asks them to: the dashboard refreshes the
-        oracle right before a Borrow, or a script does. Each update moves the two prices a fraction of the way toward
-        fixed targets derived from a stored reference price, and the movement is bounded (the Borrow-Limit tightens
-        by up to 8%, the Liquidation Price widens by up to 12%). So they drift slowly and then settle. They are not a
-        live market feed, and other visitors&apos; activity nudges them too.
-      </>
-    ),
-  },
-  {
-    q: "What does “Branch B” or “demo mode” mean, in plain language?",
-    a: (
-      <>
-        The original design had two modes. In Branch A a live keeper tells the oracle whether the stock market is
-        open. In Branch B, which is what this build runs, a person sets that open-or-closed flag by hand. Only that
-        one input is manual: the pricing math, the positions and every transaction are the real deployed programs. On
-        the site it is called demo mode, and the same disclosure is on the dashboard and the replay page.
-      </>
-    ),
-  },
-  {
-    q: "Why does the on-chain regime sometimes differ from the Pyth market-hours row?",
-    a: (
-      <>
-        They come from different places. The Pyth row is real, live market-hours data for AAPL. The on-chain regime
-        is the flag that was set by hand, so it can lag or stay closed while the real market is open, for example
-        during US trading hours. When they disagree, the page says so instead of hiding it. A keeper would keep them
-        in sync; this build does not have one. The Pyth row is schedule data, not a price.
+        There is no keeper running, so the prices only update when something asks them to &mdash; the dashboard
+        refreshes the oracle just before a borrow. Each update moves both prices a bounded fraction of the way
+        toward their targets, so they drift and then settle. For the same reason the on-chain market-hours flag
+        is set by hand and can differ from Pyth&apos;s live reading, which is shown next to it.
       </>
     ),
   },
@@ -386,50 +289,11 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     q: "Does Vigil use real Pyth prices?",
     a: (
       <>
-        Not yet. The oracle program has the Pyth ingestion and its checks (feed id, staleness, owner), but on devnet
-        it reads a test-only mock Pyth program, because Pyth&apos;s price and Benchmarks endpoints returned 401
-        without an API key. The replay&apos;s Friday-close and Monday-reopen anchors come from the real AAPLx/USDC
-        pool instead. The market-hours row is the one place real Pyth data is used today.
+        Not yet. The oracle program has the Pyth ingestion and its checks, but on devnet it reads a mock Pyth
+        program, because Pyth&apos;s price endpoints need an API key. Real Pyth data supplies the market-hours
+        reading shown on the dashboard, not the prices.
       </>
     ),
-  },
-  {
-    q: "What can go wrong?",
-    a: (
-      <>
-        The stress test on the{" "}
-        <Link href="/replay" className="inline-link">
-          replay page
-        </Link>{" "}
-        is hypothetical, but it shows one honest limit: at the deployed reserve&apos;s{" "}
-        {stress.reserve.maxLtvBps / 100}% max LTV, a weekend gap of about{" "}
-        {stress.inputs.insolvencyGapPct.toFixed(1)}% or more leaves a maximum-LTV position owing more than its
-        collateral, whatever the Liquidation Price is. That is a reserve parameter, not something the oracle can fix.
-      </>
-    ),
-  },
-];
-
-const MORE_FIGURES = [
-  {
-    value: "7 / 7",
-    label: "lifecycle transactions finalized",
-    note: "Deposit, borrow, liquidate, repay and withdraw, with two borrowers.",
-  },
-  {
-    value: "3",
-    label: "programs deployed on devnet",
-    note: "regime_oracle, lending_market and the test-only mock_pyth, confirmed executable.",
-  },
-  {
-    value: `${band.trippedTicks} of ${band.totalTicks}`,
-    label: `ticks the ±${band.bandPct}% band oracle held the price`,
-    note: "At ±2% it never trips this weekend. The width is chosen from Chainlink's documented 1–2% typical jumps, not recommended by it.",
-  },
-  {
-    value: `${stress.inputs.insolvencyGapPct.toFixed(1)}%`,
-    label: "gap where max-LTV positions first owe more than their collateral",
-    note: `Hypothetical stress test at the deployed ${stress.reserve.maxLtvBps / 100}% LTV: set by that parameter, not by the oracle.`,
   },
 ];
 
@@ -439,7 +303,7 @@ export function DetailsSection() {
       <div className="lp-container">
         <Reveal>
           <div className="lp-section-head minor-head">
-            <h2 className="lp-section-title">Questions people actually asked</h2>
+            <h2 className="lp-section-title">Questions</h2>
           </div>
         </Reveal>
 
@@ -453,23 +317,12 @@ export function DetailsSection() {
         </div>
 
         <div className="fineprint">
-          <details className="fineprint-figures">
-            <summary>The rest of the verified figures</summary>
-            <ul>
-              {MORE_FIGURES.map((f) => (
-                <li key={f.label}>
-                  <b>{f.value}</b> {f.label}
-                  <span> &mdash; {f.note}</span>
-                </li>
-              ))}
-            </ul>
-          </details>
-
-          <p className="stat-caveat">
-            <strong>What this is not:</strong> no real funds, no audit, no production uptime, and the devnet oracle is
-            fed by a test-only mock Pyth program with stored prices. The market-hours row on the dashboard is real
-            Pyth data; the prices are not.
-          </p>
+          <b>Deployment status</b>
+          <ul>
+            <li>Devnet only. Test tokens, no real value.</li>
+            <li>Not audited.</li>
+            <li>The oracle is fed by a mock Pyth program with stored prices; Pyth supplies market hours, not prices.</li>
+          </ul>
         </div>
       </div>
     </section>
@@ -487,7 +340,7 @@ export function CtaPair() {
         <Reveal>
           <div className="cta-card">
             <h2 className="cta-title">Try it on devnet</h2>
-            <p>Switch your wallet to devnet, get some test AAPLx, and borrow against it. No real funds involved.</p>
+            <p>Connect a wallet, get test AAPLx, and borrow against it.</p>
             <div className="lp-cta-row" style={{ marginBottom: 0 }}>
               <Link href="/" className="btn-gradient">
                 Launch App

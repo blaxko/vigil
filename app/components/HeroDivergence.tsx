@@ -34,10 +34,9 @@ export function HeroDivergence() {
 
   const borrow = points.map((p) => p.vigilBorrowLimitUsd);
   const liquidation = points.map((p) => p.vigilLiquidationUsd);
-  const dex = points.map((p) => p.dexOnlyPriceUsd);
 
-  const lo = Math.min(...borrow, ...dex) * 0.985;
-  const hi = Math.max(...liquidation, ...dex) * 1.015;
+  const lo = Math.min(...borrow) * 0.985;
+  const hi = Math.max(...liquidation) * 1.015;
   const innerW = W - PAD_L - PAD_R;
   const innerH = H - PAD_T - PAD_B;
 
@@ -68,7 +67,7 @@ export function HeroDivergence() {
     <figure className="hero-chart">
       <figcaption className="hero-chart-head">
         <span className="hero-chart-state">Market closed</span>
-        <span>{n} real on-chain ticks &middot; Sept 11&ndash;14, 2026</span>
+        <span>{n} real on-chain price updates</span>
       </figcaption>
 
       <div className="hero-chart-plot">
@@ -92,14 +91,7 @@ export function HeroDivergence() {
           </defs>
 
           <path className="hero-wedge" d={wedge} fill="url(#wedge-fill)" />
-          <line
-            className="hero-marker"
-            x1={x(n - 1)}
-            x2={x(n - 1)}
-            y1={PAD_T - 14}
-            y2={H - PAD_B + 10}
-          />
-          <path className="hero-line hero-line-dex" d={path(dex)} pathLength={1} />
+          <line className="hero-marker" x1={x(n - 1)} x2={x(n - 1)} y1={PAD_T - 14} y2={H - PAD_B + 10} />
           <path className="hero-line hero-line-liq" d={path(liquidation)} pathLength={1} />
           <path className="hero-line hero-line-bl" d={path(borrow)} pathLength={1} />
 
@@ -109,18 +101,16 @@ export function HeroDivergence() {
 
         <span className="hero-endlabel liq" style={{ left: endX, top: liquidationY }}>
           <b>${liquidation[n - 1].toFixed(2)}</b>
-          Liquidation &middot; widens {liquidationMove >= 0 ? "+" : ""}
-          {liquidationMove.toFixed(1)}%
+          Liquidation &middot; widens
         </span>
         <span className="hero-endlabel bl" style={{ left: endX, top: borrowY }}>
           <b>${borrow[n - 1].toFixed(2)}</b>
-          Borrow-Limit &middot; tightens {borrowMove.toFixed(1)}%
+          Borrow-Limit &middot; tightens
         </span>
       </div>
 
       <div className="hero-axis">
-        <span>Friday close &middot; ${comparison.fridayCloseAnchorUsd.toFixed(2)}</span>
-        <span className="hero-axis-mid">the market is shut &mdash; the prices keep moving</span>
+        <span>Friday close</span>
         <span>Monday open</span>
       </div>
 
@@ -134,12 +124,7 @@ export function HeroDivergence() {
           Liquidation <b>+{liquidationMove.toFixed(1)}%</b>
         </span>
         <span className="hero-chip gap">
-          Gap <b>${startGap.toFixed(2)} &rarr; ${endGap.toFixed(2)}</b>
-          <em>{(endGap / startGap).toFixed(0)}&times; wider</em>
-        </span>
-        <span className="hero-chip dex">
-          <i />
-          Raw DEX price, for reference
+          Gap <b>{(endGap / startGap).toFixed(0)}&times; wider</b>
         </span>
       </div>
     </figure>

@@ -1,13 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useLive } from "@/components/LiveProvider";
 import { PythStatusBadge, regimesDiffer } from "@/components/PythMarketRow";
 import { PRICE_SCALE } from "@/lib/constants";
 
 /**
- * The "and it is running right now" proof under the hero chart: the same two
- * prices, read live from the deployed devnet program, plus the live Pyth
+ * The "and it is running right now" readout under the hero chart: the same two
+ * prices, read live from the deployed devnet program, plus Pyth's live
  * market-hours reading. Reads the shared <LiveProvider> poll, so it adds no
  * extra RPC traffic.
  */
@@ -26,7 +25,7 @@ export function HeroLiveStrip() {
     <div className="live-strip">
       <div className="live-strip-head">
         <span className="live-dot" aria-hidden="true" />
-        Live on devnet, right now
+        Live now
       </div>
 
       <div className="live-strip-items">
@@ -43,30 +42,16 @@ export function HeroLiveStrip() {
           <span className="live-item-value">{money(gap)}</span>
         </div>
         <div className="live-item wide">
-          <span className="live-item-label">On-chain regime</span>
-          {rs ? (
-            <span className={`badge badge-nowrap ${rs.isOpen ? "open" : "closed"}`}>
-              {rs.isOpen ? "Open" : "Closed — Converging"}
-            </span>
-          ) : (
-            <span className="skeleton" role="status" aria-label="Loading regime" />
-          )}
-        </div>
-        <div className="live-item wide">
-          <span className="live-item-label">Pyth market hours (AAPL)</span>
+          <span className="live-item-label">Market hours, from Pyth</span>
           <PythStatusBadge state={pyth} />
         </div>
       </div>
 
-      <p className="live-strip-foot">
-        Read from Vigil&apos;s deployed devnet program. The Pyth row is live market-hours metadata, not a price.
-        {differ && (
-          <> <span className="c-amber">It differs from the on-chain flag right now &mdash; that is demo mode, and it is shown, not hidden.</span></>
-        )}{" "}
-        <Link href="/" className="inline-link">
-          Open the dashboard &rarr;
-        </Link>
-      </p>
+      {differ && (
+        <p className="live-strip-foot">
+          Market hours are set manually here, so the on-chain flag currently differs from Pyth.
+        </p>
+      )}
     </div>
   );
 }

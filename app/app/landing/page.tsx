@@ -7,7 +7,7 @@ import {
   AppShowcase,
   ContextSection,
   CtaPair,
-  DemoModeBand,
+  DeploymentStatus,
   DetailsSection,
   MechanismSection,
   ProofBand,
@@ -20,9 +20,7 @@ export default function LandingPage() {
         <div className="lp-wordmark">Vigil</div>
         <div className="lp-nav-links">
           <a href="#pricing">How pricing works</a>
-          <a href="#proof">Proof</a>
           <Link href="/replay">Weekend Replay</Link>
-          <a href="#faq">FAQ</a>
           <a href="https://github.com/blaxko/vigil" target="_blank" rel="noreferrer">
             GitHub
           </a>
@@ -43,9 +41,7 @@ export default function LandingPage() {
                 <span className="gradient-text">Even When the Market&apos;s Closed.</span>
               </h1>
               <p className="lp-subhead">
-                A regime-aware oracle for tokenized stocks. When the market shuts, one price tightens and the other
-                widens &mdash; so you can borrow USDC against AAPLx on a Saturday without selling the position or
-                trusting a frozen Friday price.
+                A lending market for tokenized stocks, priced by an oracle that knows when the market is shut.
               </p>
               <div className="lp-cta-row">
                 <Link href="/" className="btn-gradient">
@@ -62,7 +58,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <DemoModeBand />
+        <DeploymentStatus />
         <MechanismSection />
         <ProofBand />
         <AppShowcase />
@@ -77,7 +73,7 @@ export default function LandingPage() {
           className="lp-container"
           style={{ display: "flex", justifyContent: "space-between", width: "100%", flexWrap: "wrap", gap: 12 }}
         >
-          <span>Devnet only &mdash; no real funds involved. Built for the Stocklana hackathon.</span>
+          <span>Vigil &middot; Devnet deployment &middot; Test tokens, no real value</span>
           <a href="https://github.com/blaxko/vigil" target="_blank" rel="noreferrer">
             GitHub &rarr;
           </a>

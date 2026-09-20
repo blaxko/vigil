@@ -2184,3 +2184,158 @@ button.max {
   color: var(--muted);
   margin: 12px 0 0;
 }
+
+/* =====================================================================
+   DECLUTTER PASS — product-status bar, more whitespace, tighter copy
+   blocks. Later in the file than the earlier rules, so these override.
+   ===================================================================== */
+
+/* Shorter hero copy earns a larger, tighter measure. */
+.lp-subhead {
+  font-size: 19px;
+  line-height: 1.5;
+  max-width: 580px;
+  margin: 0 auto 32px;
+}
+
+/* More air around the dominant sections. */
+.lp-section.section-major,
+.proof-band.section-major {
+  padding: 120px 0;
+}
+.lp-section.section-minor {
+  padding: 64px 0;
+}
+.lp-section-head {
+  margin-bottom: 8px;
+}
+
+.hero-chart {
+  margin-top: 52px;
+}
+
+/* ---------- deployment status bar (replaces the demo-mode callout) ---------- */
+
+.status-wrap {
+  padding-top: 6px;
+  padding-bottom: 10px;
+}
+.status-bar {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 13px 18px;
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  background: var(--card-bg);
+}
+.status-badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--blue);
+  background: rgba(91, 140, 255, 0.14);
+  border-radius: 999px;
+  padding: 4px 11px;
+}
+.status-text {
+  flex: 1;
+  min-width: 220px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.status-details {
+  margin-left: auto;
+}
+.status-details summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.status-details summary:hover {
+  color: var(--text);
+}
+/* When open, take its own full-width row rather than stretching the bar. */
+.status-details[open] {
+  flex: 1 0 100%;
+  margin-left: 0;
+}
+.status-details p {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+/* ---------- fine print: product documentation, not disclaimers ---------- */
+
+.fineprint {
+  margin-top: 34px;
+  padding-top: 24px;
+  border-top: 1px solid var(--card-border);
+}
+.fineprint > b {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.fineprint ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.fineprint li {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* ---------- breathing room in the trimmed sections ---------- */
+
+.tag-grid.two {
+  gap: 24px;
+  margin-top: 46px;
+}
+.context-grid {
+  gap: 26px 48px;
+}
+.proof-stage,
+.app-stage {
+  margin-top: 48px;
+}
+.journey {
+  gap: 26px;
+}
+
+@media (max-width: 1000px) {
+  .lp-section.section-major,
+  .proof-band.section-major {
+    padding: 76px 0;
+  }
+  .lp-section.section-minor {
+    padding: 52px 0;
+  }
+  .hero-chart {
+    margin-top: 38px;
+  }
+  .status-details {
+    margin-left: 0;
+  }
+}
