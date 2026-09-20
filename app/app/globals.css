@@ -2339,3 +2339,19 @@ button.max {
     margin-left: 0;
   }
 }
+
+/* =====================================================================
+   The proof band lost its figures column: the chart is now the whole
+   section, centred, with the CTA under it.
+   ===================================================================== */
+
+.proof-chart {
+  max-width: 860px;
+  margin: 48px auto 0;
+}
+
+@media (max-width: 1000px) {
+  .proof-chart {
+    margin-top: 34px;
+  }
+}

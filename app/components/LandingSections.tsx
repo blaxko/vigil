@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
 import { LiveNumber } from "@/components/LiveNumber";
 import { ReplaySparkChart } from "@/components/ReplaySparkChart";
-import comparison from "@/public/comparison-output.json";
 
 /* ------------------------------------------------------------------ */
 /* Deployment status, directly under the hero                          */
@@ -89,12 +88,6 @@ export function MechanismSection() {
 /* 2. The proof                                                        */
 /* ------------------------------------------------------------------ */
 
-const PROOF_FIGURES = [
-  { value: "149", label: "on-chain price updates" },
-  { value: "298 / 298", label: "signatures finalized" },
-  { value: "27", label: "unit tests passing" },
-];
-
 export function ProofBand() {
   return (
     <section className="proof-band section-major" id="proof">
@@ -112,29 +105,16 @@ export function ProofBand() {
         </Reveal>
 
         <Reveal>
-          <div className="proof-stage">
-            <div className="proof-chart">
-              <ReplaySparkChart />
-            </div>
-            <div className="proof-side">
-              <div className="proof-figures">
-                {PROOF_FIGURES.map((f) => (
-                  <div key={f.label}>
-                    <b>{f.value}</b>
-                    <span>{f.label}</span>
-                  </div>
-                ))}
-              </div>
-              <p className="proof-note">
-                A frozen-price venue would have sat flat all weekend, then jumped{" "}
-                {comparison.frozenVaultDiscontinuousJumpPct.toFixed(2)}% the instant it reopened.
-              </p>
-              <Link href="/replay" className="btn-outline">
-                See the full replay
-              </Link>
-            </div>
+          <div className="proof-chart">
+            <ReplaySparkChart />
           </div>
         </Reveal>
+
+        <div className="lp-cta-row" style={{ marginTop: 34, marginBottom: 0 }}>
+          <Link href="/replay" className="btn-outline">
+            See the full replay
+          </Link>
+        </div>
       </div>
     </section>
   );
