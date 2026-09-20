@@ -1,6 +1,6 @@
 "use client";
 
-import { usePythMarketHours } from "@/lib/usePythMarketHours";
+import { usePythMarketHours, type PythMarketHoursState } from "@/lib/usePythMarketHours";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -11,41 +11,46 @@ function fmtUtc(unixSeconds: number): string {
   return `${DAYS[d.getUTCDay()]} ${hh}:${mm} UTC`;
 }
 
-/**
- * One row showing Pyth's live AAPL market-hours status, clearly labelled
- * as market-hours metadata (not price data). If `onchainIsOpen` is passed
- * and disagrees with Pyth, says so plainly -- the on-chain flag is set by
- * hand in demo mode, so a mismatch is expected and disclosed, not hidden.
- */
-export function PythMarketRow({ onchainIsOpen }: { onchainIsOpen?: boolean | null }) {
-  const { status, data } = usePythMarketHours();
-
-  let badge: React.ReactNode;
-  if (status === "loading") {
-    badge = <span className="badge closed">Loading&hellip;</span>;
-  } else if (status === "error" || !data) {
-    badge = <span className="badge closed">Unavailable</span>;
-  } else if (data.isOpen) {
-    badge = (
+/** The status badge alone, so other surfaces (e.g. the landing page) can show it. */
+export function PythStatusBadge({ state }: { state: PythMarketHoursState }) {
+  const { status, data } = state;
+  if (status === "loading") return <span className="badge closed">Loading&hellip;</span>;
+  if (status === "error" || !data) return <span className="badge closed">Unavailable</span>;
+  if (data.isOpen) {
+    return (
       <span className="badge open">
         Open &middot; <span style={{ whiteSpace: "nowrap" }}>closes {fmtUtc(data.nextClose)}</span>
       </span>
     );
-  } else {
-    badge = (
-      <span className="badge closed">
-        Closed &middot; <span style={{ whiteSpace: "nowrap" }}>opens {fmtUtc(data.nextOpen)}</span>
-      </span>
-    );
   }
+  return (
+    <span className="badge closed">
+      Closed &middot; <span style={{ whiteSpace: "nowrap" }}>opens {fmtUtc(data.nextOpen)}</span>
+    </span>
+  );
+}
 
-  const mismatch = data && onchainIsOpen !== undefined && onchainIsOpen !== null && data.isOpen !== onchainIsOpen;
+/** True only when we HAVE Pyth's reading, know the on-chain flag, and they disagree. */
+export function regimesDiffer(state: PythMarketHoursState, onchainIsOpen?: boolean | null): boolean {
+  return !!state.data && onchainIsOpen !== undefined && onchainIsOpen !== null && state.data.isOpen !== onchainIsOpen;
+}
 
+/**
+ * One row showing Pyth's live AAPL market-hours status, clearly labelled as
+ * market-hours metadata (not price data). If `onchainIsOpen` is passed and
+ * disagrees with Pyth, says so plainly: the on-chain flag is set by hand in
+ * demo mode, so a mismatch is expected and disclosed, not hidden.
+ *
+ * `PythMarketRowView` takes the Pyth state as a prop (so a page can share one
+ * fetch across several components); `PythMarketRow` fetches its own.
+ */
+export function PythMarketRowView({ state, onchainIsOpen }: { state: PythMarketHoursState; onchainIsOpen?: boolean | null }) {
+  const mismatch = regimesDiffer(state, onchainIsOpen);
   return (
     <>
       <div className="row">
         <span className="label">Pyth market hours (AAPL)</span>
-        {badge}
+        <PythStatusBadge state={state} />
       </div>
       <div className="gloss">
         Live from Pyth (Hermes). Market-hours metadata only &mdash; not a price.
@@ -60,4 +65,9 @@ export function PythMarketRow({ onchainIsOpen }: { onchainIsOpen?: boolean | nul
       </div>
     </>
   );
+}
+
+export function PythMarketRow({ onchainIsOpen }: { onchainIsOpen?: boolean | null }) {
+  const state = usePythMarketHours();
+  return <PythMarketRowView state={state} onchainIsOpen={onchainIsOpen} />;
 }

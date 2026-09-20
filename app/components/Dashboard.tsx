@@ -248,6 +248,38 @@ export function Dashboard() {
       ? (Number(position.collateralBase) / 10 ** COLLATERAL_DECIMALS) * (Number(regimeState.borrowLimitPrice) / PRICE_SCALE) * (reserve.maxLtvBps / 10_000)
       : null;
 
+  const walletUi = Number(collateralBalance) / 10 ** COLLATERAL_DECIMALS;
+  const collateralUi = position ? Number(position.collateralBase) / 10 ** COLLATERAL_DECIMALS : 0;
+  const debtUsd = position ? Number(position.debtAmount) / 10 ** 6 : 0;
+  const availableToBorrow = maxBorrowable !== null ? Math.max(0, maxBorrowable - debtUsd) : null;
+  const hasPosition = collateralUi > 0 || debtUsd > 0;
+
+  // Inline validation: empty input is neutral; anything else is checked before
+  // the wallet is ever asked to sign.
+  const validate = (raw: string, check: (n: number) => string | null): string | null => {
+    if (raw === "") return null;
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n <= 0) return "Enter an amount greater than zero.";
+    return check(n);
+  };
+  const depositErr = validate(depositAmount, (n) =>
+    n > walletUi + 1e-9 ? "Exceeds your wallet balance (" + walletUi.toFixed(4) + " AAPLx)." : null,
+  );
+  const borrowErr = validate(borrowAmount, (n) =>
+    collateralUi <= 0
+      ? "Deposit collateral first: there is nothing to borrow against yet."
+      : availableToBorrow !== null && n > availableToBorrow + 1e-9
+        ? "Above what you can borrow right now (about $" + availableToBorrow.toFixed(2) + ")."
+        : null,
+  );
+  const repayErr = validate(repayAmount, (n) =>
+    debtUsd <= 0
+      ? "You have no outstanding debt."
+      : n > debtUsd + 1e-9
+        ? "More than your outstanding debt ($" + debtUsd.toFixed(2) + ")."
+        : null,
+  );
+
   return (
     <div className="page">
       <div className="glow-field">
@@ -281,8 +313,7 @@ export function Dashboard() {
           <div className="panel intro-strip">
             <p>
               <strong>Vigil</strong> is a lending market for tokenized stocks: deposit AAPLx as collateral and
-              borrow USDC against it &mdash; including nights and weekends, when the stock market is closed
-              and most venues freeze the price.
+              borrow USDC against it &mdash; including nights and weekends, when the stock market is closed.
             </p>
             <p>
               Instead of one price, Vigil uses two: a conservative <span style={{ color: "var(--green)" }}>Borrow-Limit
@@ -333,60 +364,99 @@ export function Dashboard() {
               </span>
             </div>
             <PythMarketRow onchainIsOpen={regimeState ? regimeState.isOpen : null} />
-            <div className="row">
-              <span className="label">Borrow-Limit Price</span>
-              <span className="value" style={{ color: "var(--green)" }}>{regimeState ? fmtUsd(regimeState.borrowLimitPrice) : "—"}</span>
-            </div>
-            <div className="gloss">
-              {regimeState
-                ? `When you borrow, each AAPLx of collateral is valued at ${fmtUsd(regimeState.borrowLimitPrice)}.`
-                : "The conservative price your collateral is valued at when you borrow."}
-            </div>
-            <div className="row">
-              <span className="label">Liquidation Price</span>
-              <span className="value" style={{ color: "var(--blue)" }}>{regimeState ? fmtUsd(regimeState.liquidationPrice) : "—"}</span>
-            </div>
-            <div className="gloss">
-              {regimeState
-                ? `Liquidation is checked against ${fmtUsd(regimeState.liquidationPrice)} per AAPLx — deliberately wider, so a brief weekend dip can't liquidate you unfairly.`
-                : "A deliberately wider price used only for liquidation checks."}
+            <div className="price-tiles">
+              <div className="tag-card compact">
+                <span className="tag tag-green">Borrow-Limit Price</span>
+                <div className="price-tile-value c-green">
+                  {regimeState ? fmtUsd(regimeState.borrowLimitPrice) : <span className="skeleton" role="status" aria-label="Loading price" />}
+                </div>
+                <p className="tag-card-body">
+                  {regimeState
+                    ? `When you borrow, each AAPLx of collateral is valued at ${fmtUsd(regimeState.borrowLimitPrice)}. Tightens through closures.`
+                    : "The conservative price your collateral is valued at when you borrow."}
+                </p>
+              </div>
+              <div className="tag-card compact">
+                <span className="tag tag-blue">Liquidation Price</span>
+                <div className="price-tile-value c-blue">
+                  {regimeState ? fmtUsd(regimeState.liquidationPrice) : <span className="skeleton" role="status" aria-label="Loading price" />}
+                </div>
+                <p className="tag-card-body">
+                  {regimeState
+                    ? `Liquidation is checked against ${fmtUsd(regimeState.liquidationPrice)} per AAPLx — deliberately wider, so a brief weekend dip can't liquidate you unfairly. Widens through closures.`
+                    : "A deliberately wider price used only for liquidation checks."}
+                </p>
+              </div>
             </div>
             {readError && <div className="error">Failed to load on-chain state: {readError}</div>}
           </div>
 
           <div className="panel">
             <div className="section-title">Your Position</div>
+            {!wallet.connected && (
+              <div className="empty-state">Connect a wallet to see your balance and position.</div>
+            )}
+            {wallet.connected && !hasPosition && (
+              <div className="empty-state">
+                No position yet. Get some test AAPLx, then deposit it below to open one.
+              </div>
+            )}
             <div className="row">
               <span className="label">Wallet AAPLx balance</span>
               <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span className="value">{(Number(collateralBalance) / 10 ** COLLATERAL_DECIMALS).toFixed(4)}</span>
+                <span className="value">{walletUi.toFixed(4)}</span>
                 <button disabled={!wallet.connected || !!pending} onClick={handleFaucet} style={{ fontSize: 12, padding: "4px 10px" }}>
                   Get Test AAPLx
                 </button>
               </span>
             </div>
-            <div className="row">
-              <span className="label">Deposited collateral (base units)</span>
-              <span className="value">{position ? position.collateralBase.toString() : "0"}</span>
-            </div>
-            <div className="row">
-              <span className="label">Outstanding debt</span>
-              <span className="value">{position ? `$${(Number(position.debtAmount) / 10 ** 6).toFixed(2)}` : "$0.00"}</span>
-            </div>
-            <div className="row">
-              <span className="label">Max borrowable (est.)</span>
-              <span className="value">{maxBorrowable !== null ? `$${maxBorrowable.toFixed(2)}` : "—"}</span>
+            <div className="pos-tiles">
+              <div className="stat-tile">
+                <div className="stat-label">Deposited collateral</div>
+                <div className="stat-value">{collateralUi.toFixed(4)}</div>
+                <div className="stat-note">AAPLx</div>
+              </div>
+              <div className="stat-tile">
+                <div className="stat-label">Outstanding debt</div>
+                <div className="stat-value">{"$" + debtUsd.toFixed(2)}</div>
+                <div className="stat-note">USDC</div>
+              </div>
+              <div className="stat-tile">
+                <div className="stat-label">Max borrowable (est.)</div>
+                <div className="stat-value">{maxBorrowable !== null ? `$${maxBorrowable.toFixed(2)}` : "—"}</div>
+                <div className="stat-note">at the Borrow-Limit Price</div>
+              </div>
             </div>
           </div>
 
           <div className="panel">
             <div className="section-title">Deposit Collateral</div>
             <div className="form-row">
-              <input type="number" placeholder="AAPLx amount" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} />
-              <button disabled={!wallet.connected || !!pending} onClick={handleDeposit}>
+              <input
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="any"
+                placeholder="AAPLx amount"
+                aria-label="AAPLx amount to deposit"
+                aria-invalid={!!depositErr}
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+              />
+              <button
+                type="button"
+                className="secondary max"
+                disabled={!wallet.connected || !!pending || walletUi <= 0}
+                onClick={() => setDepositAmount(String(walletUi))}
+              >
+                Max
+              </button>
+              <button disabled={!wallet.connected || !!pending || !depositAmount || !!depositErr} onClick={handleDeposit}>
                 Deposit
               </button>
             </div>
+            {depositErr && <div className="field-error" role="alert">{depositErr}</div>}
+            {!wallet.connected && <div className="field-hint">Connect a wallet to deposit.</div>}
           </div>
 
           <div className="panel">
@@ -397,24 +467,69 @@ export function Dashboard() {
               runs while the on-chain regime is closed.
             </div>
             <div className="form-row">
-              <input type="number" placeholder="USDC amount" value={borrowAmount} onChange={(e) => setBorrowAmount(e.target.value)} />
-              <button disabled={!wallet.connected || !!pending} onClick={handleBorrow}>
+              <input
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="any"
+                placeholder="USDC amount"
+                aria-label="USDC amount to borrow"
+                aria-invalid={!!borrowErr}
+                value={borrowAmount}
+                onChange={(e) => setBorrowAmount(e.target.value)}
+              />
+              <button
+                type="button"
+                className="secondary max"
+                disabled={!wallet.connected || !!pending || !availableToBorrow}
+                onClick={() => setBorrowAmount(String(Math.floor((availableToBorrow ?? 0) * 100) / 100))}
+              >
+                Max
+              </button>
+              <button disabled={!wallet.connected || !!pending || !borrowAmount || !!borrowErr} onClick={handleBorrow}>
                 Borrow
               </button>
             </div>
+            {borrowErr && <div className="field-error" role="alert">{borrowErr}</div>}
+            {!wallet.connected && <div className="field-hint">Connect a wallet to borrow.</div>}
           </div>
 
           <div className="panel">
             <div className="section-title">Repay</div>
             <div className="form-row">
-              <input type="number" placeholder="USDC amount" value={repayAmount} onChange={(e) => setRepayAmount(e.target.value)} />
-              <button disabled={!wallet.connected || !!pending} onClick={handleRepay}>
+              <input
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="any"
+                placeholder="USDC amount"
+                aria-label="USDC amount to repay"
+                aria-invalid={!!repayErr}
+                value={repayAmount}
+                onChange={(e) => setRepayAmount(e.target.value)}
+              />
+              <button
+                type="button"
+                className="secondary max"
+                disabled={!wallet.connected || !!pending || debtUsd <= 0}
+                onClick={() => setRepayAmount(String(debtUsd))}
+              >
+                Max
+              </button>
+              <button disabled={!wallet.connected || !!pending || !repayAmount || !!repayErr} onClick={handleRepay}>
                 Repay
               </button>
             </div>
+            {repayErr && <div className="field-error" role="alert">{repayErr}</div>}
+            {!wallet.connected && <div className="field-hint">Connect a wallet to repay.</div>}
           </div>
 
-          {pending && <div className="pending">{pending}</div>}
+          {pending && (
+            <div className="pending" role="status">
+              <span className="spinner" aria-hidden="true" />
+              {pending}
+            </div>
+          )}
           {error && <div className="error">{error}</div>}
           {errorLogs.length > 0 && (
             <details className="tx-logs">
@@ -423,8 +538,12 @@ export function Dashboard() {
             </details>
           )}
           {lastSig && (
-            <div className="success">
-              Confirmed: <a href={`https://explorer.solana.com/tx/${lastSig}?cluster=devnet`} target="_blank" rel="noreferrer" style={{ color: "inherit" }}>{lastSig}</a>
+            <div className="success" role="status">
+              Transaction confirmed &middot;{" "}
+              <a href={"https://explorer.solana.com/tx/" + lastSig + "?cluster=devnet"} target="_blank" rel="noreferrer" style={{ color: "inherit" }}>
+                View on Solana Explorer &#8599;
+              </a>
+              <span className="sig"> {lastSig.slice(0, 8)}&hellip;{lastSig.slice(-6)}</span>
             </div>
           )}
         </>

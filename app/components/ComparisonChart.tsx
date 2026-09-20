@@ -9,6 +9,19 @@ interface ComparisonPoint {
   vigilLiquidationUsd: number;
   frozenPriceUsd: number;
   dexOnlyPriceUsd: number;
+  bandOraclePriceUsd?: number;
+}
+
+interface BandSensitivity {
+  bandPct: number;
+  bandLowUsd: number;
+  bandHighUsd: number;
+  trippedTicks: number;
+  totalTicks: number;
+  longestHoldTicks: number;
+  maxHeldVsDexPct: number;
+  rangeUsd: [number, number];
+  reopenJumpPct: number;
 }
 
 interface ComparisonData {
@@ -19,6 +32,7 @@ interface ComparisonData {
   vigilBorrowLimitRangeUsd: [number, number];
   vigilLiquidationRangeUsd: [number, number];
   frozenVaultDiscontinuousJumpPct: number;
+  bandModel?: { drawnBandPct: number; referenceUsd: number; sensitivity: BandSensitivity[] };
   points: ComparisonPoint[];
 }
 
@@ -82,17 +96,37 @@ export function ComparisonChart() {
     return <div className="error">Could not load comparison data: {error}. Run `npm run replay:compare` and copy the output into app/public/.</div>;
   }
   if (!data) {
-    return <div className="pending">Loading real replay comparison data...</div>;
+    // Same aspect ratio as the chart so the page doesn't jump when data arrives.
+    return <div className="chart-skeleton" role="status" aria-label="Loading real replay comparison data" />;
   }
 
   const { points } = data;
-  const allValues = points.flatMap((p) => [p.vigilBorrowLimitUsd, p.vigilLiquidationUsd, p.frozenPriceUsd, p.dexOnlyPriceUsd]);
+  const band = data.bandModel;
+  const hasBand = !!band && points.every((p) => typeof p.bandOraclePriceUsd === "number");
+  const allValues = points.flatMap((p) => [
+    p.vigilBorrowLimitUsd,
+    p.vigilLiquidationUsd,
+    p.frozenPriceUsd,
+    p.dexOnlyPriceUsd,
+    ...(hasBand ? [p.bandOraclePriceUsd as number] : []),
+  ]);
   const min = Math.min(...allValues) * 0.98;
   const max = Math.max(...allValues) * 1.02;
 
-  const series: { key: keyof ComparisonPoint; color: string; label: string }[] = [
+  const drawnBandPct = band?.drawnBandPct ?? 1;
+  const series: { key: keyof ComparisonPoint; color: string; label: string; dash?: string }[] = [
     { key: "dexOnlyPriceUsd", color: "var(--red)", label: "DEX-only vault (raw, undampened)" },
     { key: "frozenPriceUsd", color: "var(--amber)", label: "Frozen-price vault (Friday close, jumps at reopen)" },
+    ...(hasBand
+      ? [
+          {
+            key: "bandOraclePriceUsd" as keyof ComparisonPoint,
+            color: "var(--violet)",
+            dash: "6 4",
+            label: `Fixed ±${drawnBandPct}% deviation-band oracle (circuit breaker, generic model)`,
+          },
+        ]
+      : []),
     { key: "vigilLiquidationUsd", color: "var(--blue)", label: "Vigil Liquidation Price" },
     { key: "vigilBorrowLimitUsd", color: "var(--green)", label: "Vigil Borrow-Limit Price" },
   ];
@@ -103,6 +137,9 @@ export function ComparisonChart() {
   const unitsPerPx = WIDTH / Math.max(renderedWidth, 1);
   const labelSize = Math.max(11, MIN_LABEL_PX * unitsPerPx);
   const padLeft = Math.max(PAD_LEFT, Math.ceil(labelSize * 4 * 0.62) + 10);
+
+  const drawn = band?.sensitivity.find((s) => s.bandPct === band.drawnBandPct);
+  const otherBands = band?.sensitivity.filter((s) => s.bandPct !== band.drawnBandPct) ?? [];
 
   return (
     <div ref={wrapRef}>
@@ -124,7 +161,14 @@ export function ComparisonChart() {
           );
         })}
         {series.map((s) => (
-          <path key={s.key} d={buildPath(points, s.key, min, max, padLeft)} fill="none" style={{ stroke: s.color }} strokeWidth={2} />
+          <path
+            key={s.key}
+            d={buildPath(points, s.key, min, max, padLeft)}
+            fill="none"
+            style={{ stroke: s.color }}
+            strokeWidth={2}
+            strokeDasharray={s.dash}
+          />
         ))}
       </svg>
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 10 }}>
@@ -160,7 +204,75 @@ export function ComparisonChart() {
           <span className="label">Frozen-price vault's discontinuous jump at reopen</span>
           <span className="value">{data.frozenVaultDiscontinuousJumpPct.toFixed(2)}%</span>
         </div>
+
+        {hasBand && drawn && (
+          <>
+            <div className="row-divider" />
+            <div className="row">
+              <span className="label">
+                &plusmn;{drawn.bandPct}% band (${drawn.bandLowUsd.toFixed(2)}&ndash;${drawn.bandHighUsd.toFixed(2)}): breaker held the price on
+              </span>
+              <span className="value">
+                {drawn.trippedTicks} of {drawn.totalTicks} ticks
+              </span>
+            </div>
+            <div className="row">
+              <span className="label">&hellip; held price at its worst vs the live DEX price</span>
+              <span className="value">{drawn.maxHeldVsDexPct.toFixed(2)}% off</span>
+            </div>
+            <div className="row">
+              <span className="label">Band oracle&apos;s step at Monday reopen</span>
+              <span className="value">{drawn.reopenJumpPct.toFixed(2)}%</span>
+            </div>
+            <div className="row">
+              <span className="label">Highest price the band oracle sizes borrowing on (Vigil Borrow-Limit peak)</span>
+              <span className="value">
+                ${drawn.rangeUsd[1].toFixed(2)} (${data.vigilBorrowLimitRangeUsd[1].toFixed(2)})
+              </span>
+            </div>
+            {otherBands.map((o) => (
+              <div className="row" key={o.bandPct}>
+                <span className="label">
+                  Same model at &plusmn;{o.bandPct}% (${o.bandLowUsd.toFixed(2)}&ndash;${o.bandHighUsd.toFixed(2)})
+                </span>
+                <span className="value">
+                  {o.trippedTicks === 0 ? "never trips: identical to DEX-only" : `holds on ${o.trippedTicks} of ${o.totalTicks} ticks`}
+                </span>
+              </div>
+            ))}
+          </>
+        )}
       </div>
+
+      {hasBand && (
+        <details className="baseline-note">
+          <summary>How the deviation-band baseline is defined, and where its width comes from</summary>
+          <p>
+            A generic circuit-breaker model, not a model of any specific protocol&apos;s implementation. It accepts the raw
+            DEX price only while it stays within &plusmn;{drawnBandPct}% of the last live print (the Friday close). A
+            reading outside the band trips the breaker and the last accepted price is held until a reading is back
+            inside the band or the market reopens and a live print re-centres it. It is computed from the same real
+            DEX data as the other baselines, not on-chain.
+          </p>
+          <p>
+            Chainlink&apos;s{" "}
+            <a
+              href="https://docs.chain.link/data-streams/rwa-streams/24-5-us-equities-user-guide"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-link"
+            >
+              24/5 US equities guide
+            </a>{" "}
+            tells integrators to set deviation limits but prescribes no numeric band, leaving it to each protocol&apos;s
+            risk appetite. Its only figures are descriptive: session-transition jumps are &ldquo;typically 1&ndash;2%&rdquo;,
+            with spikes of &ldquo;10&ndash;20%+&rdquo;. The width here is therefore chosen <em>from</em> that range, not
+            recommended by it. The narrow end (&plusmn;1%) is drawn; the wide end (&plusmn;2%) is reported above so the
+            choice is visible. At &plusmn;2% the breaker never trips on this weekend and the line would sit exactly on
+            the DEX-only line.
+          </p>
+        </details>
+      )}
     </div>
   );
 }

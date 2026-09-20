@@ -1,4 +1,5 @@
 import { ComparisonChart } from "@/components/ComparisonChart";
+import { StressTest } from "@/components/StressTest";
 
 export default function ReplayPage() {
   return (
@@ -25,11 +26,13 @@ export default function ReplayPage() {
 
         <div className="panel">
           <p style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1.5, margin: 0 }}>
-            Every point below came from a real on-chain <code>update_price</code> transaction against
+            Every Vigil point below is a real on-chain <code>update_price</code> transaction against
             Vigil&apos;s deployed devnet programs (149 ticks, 298 real signatures, all confirmed
             finalized &mdash; see the README), driven by real historical AAPLx/USDC trading data
-            (GeckoTerminal) for the actual Friday-close-to-Monday-open window of Sept 11-14, 2026.
-            Nothing on this page is synthetic or invented.
+            (GeckoTerminal) for the actual Friday-close-to-Monday-open window of Sept 11&ndash;14, 2026.
+            The frozen-price, DEX-only and deviation-band lines are baselines computed from that same
+            real DEX data &mdash; models of how other approaches would have priced the same weekend, not
+            on-chain venues. No data in this replay is invented.
           </p>
         </div>
 
@@ -57,6 +60,8 @@ export default function ReplayPage() {
         <div className="panel">
           <ComparisonChart />
         </div>
+
+        <StressTest />
       </div>
     </div>
   );

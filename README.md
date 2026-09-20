@@ -1,8 +1,24 @@
 # Vigil
 
-Regime-aware lending protocol for tokenized US equities on Solana. See
+Regime-aware lending protocol for tokenized US equities on Solana, built around a
+regime-aware oracle (`regime_oracle`) that other lenders could adopt: it is a separate
+on-chain program exposing two prices and a regime flag, and the lending market here is
+one consumer of it. See
 `Vigil Project Brief 2.md` for the full design rationale, architecture, and
 acceptance criteria.
+
+## Related work and guidance
+
+- **Chainlink, tokenized-equity feeds** ([docs](https://docs.chain.link/data-feeds/tokenized-equity-feeds),
+  [24/5 US equities guide](https://docs.chain.link/data-streams/rwa-streams/24-5-us-equities-user-guide)):
+  tells integrators to treat weekends and holidays as an expected state (pause, allow bounded
+  trading, or reference secondary markets) and to set deviation limits / circuit breakers. It
+  prescribes **no numeric band** and leaves thresholds to each protocol's risk appetite. Its only
+  figures are descriptive: session-transition jumps are "typically 1-2%", with spikes of "10-20%+".
+- **Sable / Stock-Lend** (same hackathon, [Mgabal/Stock-Lend](https://github.com/Mgabal/Stock-Lend)):
+  its README's "Disclosed scope limitation" says pricing in its lending market "uses a seeded
+  reference rate, not a live oracle feed" and that a production version would need an oracle
+  (e.g. Pyth). Real pricing is out of its scope; it is Vigil's focus.
 
 ## Status
 
@@ -49,7 +65,7 @@ environment — see "Submission checklist" at the bottom.**
       `post_dex_reference` + `update_price` transaction pair, plus the
       market-close and reopen-snap transitions — **149 total ticks, every
       one with a real finalized devnet signature** (`scripts/replay/replay-output.json`)
-- [x] Three-way comparison (Vigil / frozen-price vault / DEX-only vault),
+- [x] Comparison (Vigil / frozen-price vault / DEX-only vault / fixed deviation-band oracle),
       computed from that single real dataset (`npm run replay:compare`,
       rendered at `app/replay`) — never three independently tuned scenarios
 - [x] All 298 unique replay signatures programmatically verified finalized
@@ -305,6 +321,24 @@ would otherwise hide:
    used `Date.now()` for Pyth `publish_time` intermittently failed
    staleness checks because the on-chain `Clock` sysvar doesn't track host
    time. Fixed by reading the Clock sysvar directly in tests instead.
+
+## Deviation-band baseline and the hypothetical stress test (`/replay`)
+
+- **Deviation-band baseline** (`npm run replay:compare`): a generic circuit-breaker model computed from the
+  same real DEX data: it accepts the DEX price only while within a band of the Friday close and holds the last
+  accepted price otherwise. **Chainlink's documentation prescribes no numeric band**; its only figures are
+  descriptive (session-transition jumps "typically 1-2%", spikes of "10-20%+"), so the width is chosen *from* that
+  range, not recommended by it. The narrow end (+/-1%) is drawn (breaker holds on 12 of 61 ticks); at +/-2% it
+  never trips this weekend and equals the DEX-only line. It is a model, not any specific protocol's implementation.
+- **Stress test** (`npm run replay:stress`, reads the deployed Reserve from devnet): **hypothetical, not
+  historical**. The only invented input is the gap size; reserve parameters, weekend prices and the oracle's update
+  rule are the deployed ones. Findings at the deployed reserve (90% max LTV, 92% liquidation threshold, 5% bonus):
+  a position opened at the maximum LTV against the weekend's peak Borrow-Limit Price becomes insolvent at a gap of
+  about 10.9% (about $23.9k of bad debt per $1M at a 13% gap, the size of Apple's Mar 13 to Mar 16 2020 weekend
+  gap, citing StatMuse split-adjusted data). **That threshold is set by the LTV, not by the widened Liquidation
+  Price**: past it no liquidator can profit at any Liquidation Price. The widened price adds delay (9 to 13
+  oracle updates before liquidation can execute at 5 to 10% gaps). Assumptions and non-modelled effects are on the
+  page and in `scripts/replay/stress-test.ts`.
 
 ## Demo-mode oracle refresh (on-demand, disclosed)
 

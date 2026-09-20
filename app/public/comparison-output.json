@@ -15,6 +15,40 @@
     359.633253
   ],
   "frozenVaultDiscontinuousJumpPct": 1.469943674857424,
+  "bandModel": {
+    "drawnBandPct": 1,
+    "referenceUsd": 332.0068885877475,
+    "sensitivity": [
+      {
+        "bandPct": 1,
+        "bandLowUsd": 328.68681970187,
+        "bandHighUsd": 335.326957473625,
+        "trippedTicks": 12,
+        "totalTicks": 61,
+        "longestHoldTicks": 2,
+        "maxHeldVsDexPct": 2.033407877457404,
+        "rangeUsd": [
+          329.33609218203236,
+          336.887202846634
+        ],
+        "reopenJumpPct": 1.0562697387002935
+      },
+      {
+        "bandPct": 2,
+        "bandLowUsd": 325.36675081599253,
+        "bandHighUsd": 338.64702635950243,
+        "trippedTicks": 0,
+        "totalTicks": 61,
+        "longestHoldTicks": 0,
+        "maxHeldVsDexPct": 0,
+        "rangeUsd": [
+          328.2652200376025,
+          337.7363401838821
+        ],
+        "reopenJumpPct": 1.0562697387002935
+      }
+    ]
+  },
   "points": [
     {
       "timestampUtc": "2026-09-11T19:00:00.000Z",
@@ -22,7 +56,8 @@
       "vigilBorrowLimitUsd": 328.792104,
       "vigilLiquidationUsd": 332.869668,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 332.7157416608214
+      "dexOnlyPriceUsd": 332.7157416608214,
+      "bandOraclePriceUsd": 332.7157416608214
     },
     {
       "timestampUtc": "2026-09-11T20:00:00.000Z",
@@ -30,7 +65,8 @@
       "vigilBorrowLimitUsd": 328.761453,
       "vigilLiquidationUsd": 333.118569,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 332.0068885877475
+      "dexOnlyPriceUsd": 332.0068885877475,
+      "bandOraclePriceUsd": 332.0068885877475
     },
     {
       "timestampUtc": "2026-09-11T21:00:00.000Z",
@@ -38,7 +74,8 @@
       "vigilBorrowLimitUsd": 328.750794,
       "vigilLiquidationUsd": 333.77817,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 334.3563126274836
+      "dexOnlyPriceUsd": 334.3563126274836,
+      "bandOraclePriceUsd": 334.3563126274836
     },
     {
       "timestampUtc": "2026-09-11T22:00:00.000Z",
@@ -46,7 +83,8 @@
       "vigilBorrowLimitUsd": 328.747058,
       "vigilLiquidationUsd": 334.434148,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 334.90775676344515
+      "dexOnlyPriceUsd": 334.90775676344515,
+      "bandOraclePriceUsd": 334.90775676344515
     },
     {
       "timestampUtc": "2026-09-11T23:00:00.000Z",
@@ -54,7 +92,8 @@
       "vigilBorrowLimitUsd": 328.807703,
       "vigilLiquidationUsd": 335.255705,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 337.3537448058504
+      "dexOnlyPriceUsd": 337.3537448058504,
+      "bandOraclePriceUsd": 334.90775676344515
     },
     {
       "timestampUtc": "2026-09-12T00:00:00.000Z",
@@ -62,7 +101,8 @@
       "vigilBorrowLimitUsd": 328.797642,
       "vigilLiquidationUsd": 335.759997,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 335.1268423279606
+      "dexOnlyPriceUsd": 335.1268423279606,
+      "bandOraclePriceUsd": 335.1268423279606
     },
     {
       "timestampUtc": "2026-09-12T01:00:00.000Z",
@@ -70,7 +110,8 @@
       "vigilBorrowLimitUsd": 328.69355,
       "vigilLiquidationUsd": 335.921514,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 332.0490455961818
+      "dexOnlyPriceUsd": 332.0490455961818,
+      "bandOraclePriceUsd": 332.0490455961818
     },
     {
       "timestampUtc": "2026-09-12T02:00:00.000Z",
@@ -78,7 +119,8 @@
       "vigilBorrowLimitUsd": 328.71122,
       "vigilLiquidationUsd": 336.439609,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 336.09471545562496
+      "dexOnlyPriceUsd": 336.09471545562496,
+      "bandOraclePriceUsd": 332.0490455961818
     },
     {
       "timestampUtc": "2026-09-12T03:00:00.000Z",
@@ -86,7 +128,8 @@
       "vigilBorrowLimitUsd": 328.596078,
       "vigilLiquidationUsd": 336.48681,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 331.69765914625197
+      "dexOnlyPriceUsd": 331.69765914625197,
+      "bandOraclePriceUsd": 331.69765914625197
     },
     {
       "timestampUtc": "2026-09-12T04:00:00.000Z",
@@ -94,7 +137,8 @@
       "vigilBorrowLimitUsd": 328.571573,
       "vigilLiquidationUsd": 336.814882,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 334.6749830739293
+      "dexOnlyPriceUsd": 334.6749830739293,
+      "bandOraclePriceUsd": 334.6749830739293
     },
     {
       "timestampUtc": "2026-09-12T05:00:00.000Z",
@@ -102,7 +146,8 @@
       "vigilBorrowLimitUsd": 328.434578,
       "vigilLiquidationUsd": 336.751671,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 330.8914279658035
+      "dexOnlyPriceUsd": 330.8914279658035,
+      "bandOraclePriceUsd": 330.8914279658035
     },
     {
       "timestampUtc": "2026-09-12T06:00:00.000Z",
@@ -110,7 +155,8 @@
       "vigilBorrowLimitUsd": 328.273893,
       "vigilLiquidationUsd": 336.643377,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 330.0271310042256
+      "dexOnlyPriceUsd": 330.0271310042256,
+      "bandOraclePriceUsd": 330.0271310042256
     },
     {
       "timestampUtc": "2026-09-12T07:00:00.000Z",
@@ -118,7 +164,8 @@
       "vigilBorrowLimitUsd": 328.153932,
       "vigilLiquidationUsd": 336.677755,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 331.24281814510954
+      "dexOnlyPriceUsd": 331.24281814510954,
+      "bandOraclePriceUsd": 331.24281814510954
     },
     {
       "timestampUtc": "2026-09-12T08:00:00.000Z",
@@ -126,7 +173,8 @@
       "vigilBorrowLimitUsd": 327.934099,
       "vigilLiquidationUsd": 337.954987,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 334.68312544273
+      "dexOnlyPriceUsd": 334.68312544273,
+      "bandOraclePriceUsd": 334.68312544273
     },
     {
       "timestampUtc": "2026-09-12T09:00:00.000Z",
@@ -134,7 +182,8 @@
       "vigilBorrowLimitUsd": 327.730663,
       "vigilLiquidationUsd": 339.165371,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 335.3234353709478
+      "dexOnlyPriceUsd": 335.3234353709478,
+      "bandOraclePriceUsd": 335.3234353709478
     },
     {
       "timestampUtc": "2026-09-12T10:00:00.000Z",
@@ -142,7 +191,8 @@
       "vigilBorrowLimitUsd": 326.878504,
       "vigilLiquidationUsd": 341.343697,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 331.01613950956744
+      "dexOnlyPriceUsd": 331.01613950956744,
+      "bandOraclePriceUsd": 331.01613950956744
     },
     {
       "timestampUtc": "2026-09-12T11:00:00.000Z",
@@ -150,7 +200,8 @@
       "vigilBorrowLimitUsd": 326.384484,
       "vigilLiquidationUsd": 342.696566,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 331.37075047453527
+      "dexOnlyPriceUsd": 331.37075047453527,
+      "bandOraclePriceUsd": 331.37075047453527
     },
     {
       "timestampUtc": "2026-09-12T12:00:00.000Z",
@@ -158,7 +209,8 @@
       "vigilBorrowLimitUsd": 326.042427,
       "vigilLiquidationUsd": 344.310025,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 335.964975608543
+      "dexOnlyPriceUsd": 335.964975608543,
+      "bandOraclePriceUsd": 331.37075047453527
     },
     {
       "timestampUtc": "2026-09-12T13:00:00.000Z",
@@ -166,7 +218,8 @@
       "vigilBorrowLimitUsd": 325.722835,
       "vigilLiquidationUsd": 345.725317,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 336.2671158135698
+      "dexOnlyPriceUsd": 336.2671158135698,
+      "bandOraclePriceUsd": 331.37075047453527
     },
     {
       "timestampUtc": "2026-09-12T14:00:00.000Z",
@@ -174,7 +227,8 @@
       "vigilBorrowLimitUsd": 325.367511,
       "vigilLiquidationUsd": 346.793119,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 334.643115079254
+      "dexOnlyPriceUsd": 334.643115079254,
+      "bandOraclePriceUsd": 334.643115079254
     },
     {
       "timestampUtc": "2026-09-12T15:00:00.000Z",
@@ -182,7 +236,8 @@
       "vigilBorrowLimitUsd": 324.904843,
       "vigilLiquidationUsd": 347.32627,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 330.4655611471671
+      "dexOnlyPriceUsd": 330.4655611471671,
+      "bandOraclePriceUsd": 330.4655611471671
     },
     {
       "timestampUtc": "2026-09-12T16:00:00.000Z",
@@ -190,7 +245,8 @@
       "vigilBorrowLimitUsd": 324.648518,
       "vigilLiquidationUsd": 348.466968,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 337.1852738998174
+      "dexOnlyPriceUsd": 337.1852738998174,
+      "bandOraclePriceUsd": 330.4655611471671
     },
     {
       "timestampUtc": "2026-09-12T17:00:00.000Z",
@@ -198,7 +254,8 @@
       "vigilBorrowLimitUsd": 324.358095,
       "vigilLiquidationUsd": 349.384679,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 336.01641712654475
+      "dexOnlyPriceUsd": 336.01641712654475,
+      "bandOraclePriceUsd": 330.4655611471671
     },
     {
       "timestampUtc": "2026-09-12T18:00:00.000Z",
@@ -206,7 +263,8 @@
       "vigilBorrowLimitUsd": 324.031749,
       "vigilLiquidationUsd": 350.090073,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 334.66465070415035
+      "dexOnlyPriceUsd": 334.66465070415035,
+      "bandOraclePriceUsd": 334.66465070415035
     },
     {
       "timestampUtc": "2026-09-12T20:00:00.000Z",
@@ -214,7 +272,8 @@
       "vigilBorrowLimitUsd": 323.799828,
       "vigilLiquidationUsd": 351.029329,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 337.7363401838821
+      "dexOnlyPriceUsd": 337.7363401838821,
+      "bandOraclePriceUsd": 334.66465070415035
     },
     {
       "timestampUtc": "2026-09-12T23:00:00.000Z",
@@ -222,7 +281,8 @@
       "vigilBorrowLimitUsd": 323.496458,
       "vigilLiquidationUsd": 351.612487,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 335.1301348421672
+      "dexOnlyPriceUsd": 335.1301348421672,
+      "bandOraclePriceUsd": 335.1301348421672
     },
     {
       "timestampUtc": "2026-09-13T00:00:00.000Z",
@@ -230,7 +290,8 @@
       "vigilBorrowLimitUsd": 323.119721,
       "vigilLiquidationUsd": 351.847963,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 332.21404274035416
+      "dexOnlyPriceUsd": 332.21404274035416,
+      "bandOraclePriceUsd": 332.21404274035416
     },
     {
       "timestampUtc": "2026-09-13T01:00:00.000Z",
@@ -238,7 +299,8 @@
       "vigilBorrowLimitUsd": 322.831061,
       "vigilLiquidationUsd": 352.369218,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 335.0370336335427
+      "dexOnlyPriceUsd": 335.0370336335427,
+      "bandOraclePriceUsd": 335.0370336335427
     },
     {
       "timestampUtc": "2026-09-13T02:00:00.000Z",
@@ -246,7 +308,8 @@
       "vigilBorrowLimitUsd": 322.531388,
       "vigilLiquidationUsd": 352.784002,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 334.3802624567079
+      "dexOnlyPriceUsd": 334.3802624567079,
+      "bandOraclePriceUsd": 334.3802624567079
     },
     {
       "timestampUtc": "2026-09-13T03:00:00.000Z",
@@ -254,7 +317,8 @@
       "vigilBorrowLimitUsd": 322.232502,
       "vigilLiquidationUsd": 353.130472,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 334.05817380546927
+      "dexOnlyPriceUsd": 334.05817380546927,
+      "bandOraclePriceUsd": 334.05817380546927
     },
     {
       "timestampUtc": "2026-09-13T04:00:00.000Z",
@@ -262,7 +326,8 @@
       "vigilBorrowLimitUsd": 321.852037,
       "vigilLiquidationUsd": 353.152069,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 330.91494368965664
+      "dexOnlyPriceUsd": 330.91494368965664,
+      "bandOraclePriceUsd": 330.91494368965664
     },
     {
       "timestampUtc": "2026-09-13T05:00:00.000Z",
@@ -270,7 +335,8 @@
       "vigilBorrowLimitUsd": 321.500398,
       "vigilLiquidationUsd": 353.265972,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 331.5466314453894
+      "dexOnlyPriceUsd": 331.5466314453894,
+      "bandOraclePriceUsd": 331.5466314453894
     },
     {
       "timestampUtc": "2026-09-13T08:00:00.000Z",
@@ -278,7 +344,8 @@
       "vigilBorrowLimitUsd": 321.211554,
       "vigilLiquidationUsd": 353.556903,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 333.3025174836008
+      "dexOnlyPriceUsd": 333.3025174836008,
+      "bandOraclePriceUsd": 333.3025174836008
     },
     {
       "timestampUtc": "2026-09-13T09:00:00.000Z",
@@ -286,7 +353,8 @@
       "vigilBorrowLimitUsd": 320.849425,
       "vigilLiquidationUsd": 353.5551,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 330.46299358569166
+      "dexOnlyPriceUsd": 330.46299358569166,
+      "bandOraclePriceUsd": 330.46299358569166
     },
     {
       "timestampUtc": "2026-09-13T10:00:00.000Z",
@@ -294,7 +362,8 @@
       "vigilBorrowLimitUsd": 320.487421,
       "vigilLiquidationUsd": 353.523725,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 329.9487648309992
+      "dexOnlyPriceUsd": 329.9487648309992,
+      "bandOraclePriceUsd": 329.9487648309992
     },
     {
       "timestampUtc": "2026-09-13T11:00:00.000Z",
@@ -302,7 +371,8 @@
       "vigilBorrowLimitUsd": 320.135937,
       "vigilLiquidationUsd": 353.533876,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 329.9717958776404
+      "dexOnlyPriceUsd": 329.9717958776404,
+      "bandOraclePriceUsd": 329.9717958776404
     },
     {
       "timestampUtc": "2026-09-13T12:00:00.000Z",
@@ -310,7 +380,8 @@
       "vigilBorrowLimitUsd": 319.797054,
       "vigilLiquidationUsd": 353.551649,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 329.91297063037126
+      "dexOnlyPriceUsd": 329.91297063037126,
+      "bandOraclePriceUsd": 329.91297063037126
     },
     {
       "timestampUtc": "2026-09-13T13:00:00.000Z",
@@ -318,7 +389,8 @@
       "vigilBorrowLimitUsd": 319.600377,
       "vigilLiquidationUsd": 354.017059,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 334.4194697039261
+      "dexOnlyPriceUsd": 334.4194697039261,
+      "bandOraclePriceUsd": 334.4194697039261
     },
     {
       "timestampUtc": "2026-09-13T14:00:00.000Z",
@@ -326,7 +398,8 @@
       "vigilBorrowLimitUsd": 319.278745,
       "vigilLiquidationUsd": 355.324744,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 336.23119762949455
+      "dexOnlyPriceUsd": 336.23119762949455,
+      "bandOraclePriceUsd": 334.4194697039261
     },
     {
       "timestampUtc": "2026-09-13T15:00:00.000Z",
@@ -334,7 +407,8 @@
       "vigilBorrowLimitUsd": 318.962298,
       "vigilLiquidationUsd": 355.473564,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 331.2808210049431
+      "dexOnlyPriceUsd": 331.2808210049431,
+      "bandOraclePriceUsd": 331.2808210049431
     },
     {
       "timestampUtc": "2026-09-13T16:00:00.000Z",
@@ -342,7 +416,8 @@
       "vigilBorrowLimitUsd": 318.651372,
       "vigilLiquidationUsd": 355.632704,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 331.2088612504055
+      "dexOnlyPriceUsd": 331.2088612504055,
+      "bandOraclePriceUsd": 331.2088612504055
     },
     {
       "timestampUtc": "2026-09-13T17:00:00.000Z",
@@ -350,7 +425,8 @@
       "vigilBorrowLimitUsd": 318.355245,
       "vigilLiquidationUsd": 355.81775,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 331.4151456679988
+      "dexOnlyPriceUsd": 331.4151456679988,
+      "bandOraclePriceUsd": 331.4151456679988
     },
     {
       "timestampUtc": "2026-09-13T18:00:00.000Z",
@@ -358,7 +434,8 @@
       "vigilBorrowLimitUsd": 318.077238,
       "vigilLiquidationUsd": 356.070645,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 331.9393645184099
+      "dexOnlyPriceUsd": 331.9393645184099,
+      "bandOraclePriceUsd": 331.9393645184099
     },
     {
       "timestampUtc": "2026-09-13T19:00:00.000Z",
@@ -366,7 +443,8 @@
       "vigilBorrowLimitUsd": 317.855605,
       "vigilLiquidationUsd": 356.478153,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 333.6114851864179
+      "dexOnlyPriceUsd": 333.6114851864179,
+      "bandOraclePriceUsd": 333.6114851864179
     },
     {
       "timestampUtc": "2026-09-13T20:00:00.000Z",
@@ -374,7 +452,8 @@
       "vigilBorrowLimitUsd": 317.589835,
       "vigilLiquidationUsd": 356.656296,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 331.78148203415896
+      "dexOnlyPriceUsd": 331.78148203415896,
+      "bandOraclePriceUsd": 331.78148203415896
     },
     {
       "timestampUtc": "2026-09-13T21:00:00.000Z",
@@ -382,7 +461,8 @@
       "vigilBorrowLimitUsd": 317.321827,
       "vigilLiquidationUsd": 356.769994,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 331.29229379180657
+      "dexOnlyPriceUsd": 331.29229379180657,
+      "bandOraclePriceUsd": 331.29229379180657
     },
     {
       "timestampUtc": "2026-09-13T22:00:00.000Z",
@@ -390,7 +470,8 @@
       "vigilBorrowLimitUsd": 317.108528,
       "vigilLiquidationUsd": 357.045439,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 332.92415026647245
+      "dexOnlyPriceUsd": 332.92415026647245,
+      "bandOraclePriceUsd": 332.92415026647245
     },
     {
       "timestampUtc": "2026-09-13T23:00:00.000Z",
@@ -398,7 +479,8 @@
       "vigilBorrowLimitUsd": 316.872079,
       "vigilLiquidationUsd": 357.189602,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 331.8480024955884
+      "dexOnlyPriceUsd": 331.8480024955884,
+      "bandOraclePriceUsd": 331.8480024955884
     },
     {
       "timestampUtc": "2026-09-14T00:00:00.000Z",
@@ -406,7 +488,8 @@
       "vigilBorrowLimitUsd": 316.713455,
       "vigilLiquidationUsd": 357.591806,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 334.4110109767625
+      "dexOnlyPriceUsd": 334.4110109767625,
+      "bandOraclePriceUsd": 334.4110109767625
     },
     {
       "timestampUtc": "2026-09-14T02:00:00.000Z",
@@ -414,7 +497,8 @@
       "vigilBorrowLimitUsd": 316.439414,
       "vigilLiquidationUsd": 357.550913,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 330.2318628774245
+      "dexOnlyPriceUsd": 330.2318628774245,
+      "bandOraclePriceUsd": 330.2318628774245
     },
     {
       "timestampUtc": "2026-09-14T03:00:00.000Z",
@@ -422,7 +506,8 @@
       "vigilBorrowLimitUsd": 316.120089,
       "vigilLiquidationUsd": 357.33416,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 328.2652200376025
+      "dexOnlyPriceUsd": 328.2652200376025,
+      "bandOraclePriceUsd": 330.2318628774245
     },
     {
       "timestampUtc": "2026-09-14T05:00:00.000Z",
@@ -430,7 +515,8 @@
       "vigilBorrowLimitUsd": 315.910977,
       "vigilLiquidationUsd": 357.495223,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 331.6518538035377
+      "dexOnlyPriceUsd": 331.6518538035377,
+      "bandOraclePriceUsd": 331.6518538035377
     },
     {
       "timestampUtc": "2026-09-14T06:00:00.000Z",
@@ -438,7 +524,8 @@
       "vigilBorrowLimitUsd": 315.663152,
       "vigilLiquidationUsd": 357.494519,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 330.08991583762315
+      "dexOnlyPriceUsd": 330.08991583762315,
+      "bandOraclePriceUsd": 330.08991583762315
     },
     {
       "timestampUtc": "2026-09-14T07:00:00.000Z",
@@ -446,7 +533,8 @@
       "vigilBorrowLimitUsd": 315.404736,
       "vigilLiquidationUsd": 357.435141,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 329.33609218203236
+      "dexOnlyPriceUsd": 329.33609218203236,
+      "bandOraclePriceUsd": 329.33609218203236
     },
     {
       "timestampUtc": "2026-09-14T08:00:00.000Z",
@@ -454,7 +542,8 @@
       "vigilBorrowLimitUsd": 315.132838,
       "vigilLiquidationUsd": 357.314771,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 328.5193286870549
+      "dexOnlyPriceUsd": 328.5193286870549,
+      "bandOraclePriceUsd": 329.33609218203236
     },
     {
       "timestampUtc": "2026-09-14T09:00:00.000Z",
@@ -462,7 +551,8 @@
       "vigilBorrowLimitUsd": 314.954969,
       "vigilLiquidationUsd": 357.521316,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 331.4786920273527
+      "dexOnlyPriceUsd": 331.4786920273527,
+      "bandOraclePriceUsd": 331.4786920273527
     },
     {
       "timestampUtc": "2026-09-14T10:00:00.000Z",
@@ -470,7 +560,8 @@
       "vigilBorrowLimitUsd": 314.871556,
       "vigilLiquidationUsd": 358.02954,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 334.67938897311836
+      "dexOnlyPriceUsd": 334.67938897311836,
+      "bandOraclePriceUsd": 334.67938897311836
     },
     {
       "timestampUtc": "2026-09-14T11:00:00.000Z",
@@ -478,7 +569,8 @@
       "vigilBorrowLimitUsd": 314.806078,
       "vigilLiquidationUsd": 358.524826,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 335.2248832397338
+      "dexOnlyPriceUsd": 335.2248832397338,
+      "bandOraclePriceUsd": 335.2248832397338
     },
     {
       "timestampUtc": "2026-09-14T12:00:00.000Z",
@@ -486,7 +578,8 @@
       "vigilBorrowLimitUsd": 314.750224,
       "vigilLiquidationUsd": 358.989265,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 335.56714979670255
+      "dexOnlyPriceUsd": 335.56714979670255,
+      "bandOraclePriceUsd": 335.2248832397338
     },
     {
       "timestampUtc": "2026-09-14T13:00:00.000Z",
@@ -494,7 +587,8 @@
       "vigilBorrowLimitUsd": 314.732815,
       "vigilLiquidationUsd": 359.518112,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 336.887202846634
+      "dexOnlyPriceUsd": 336.887202846634,
+      "bandOraclePriceUsd": 335.2248832397338
     },
     {
       "timestampUtc": "2026-09-14T14:00:00.000Z",
@@ -502,7 +596,8 @@
       "vigilBorrowLimitUsd": 314.615076,
       "vigilLiquidationUsd": 359.633253,
       "frozenPriceUsd": 332.0068885877475,
-      "dexOnlyPriceUsd": 333.3659591015167
+      "dexOnlyPriceUsd": 333.3659591015167,
+      "bandOraclePriceUsd": 333.3659591015167
     },
     {
       "timestampUtc": "2026-09-14T13:30:00Z",
@@ -510,7 +605,8 @@
       "vigilBorrowLimitUsd": 315.723629,
       "vigilLiquidationUsd": 356.236506,
       "frozenPriceUsd": 336.887202846634,
-      "dexOnlyPriceUsd": 336.887202846634
+      "dexOnlyPriceUsd": 336.887202846634,
+      "bandOraclePriceUsd": 336.887202846634
     }
   ]
 }

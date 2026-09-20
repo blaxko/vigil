@@ -1,0 +1,141 @@
+{
+  "hypothetical": true,
+  "generatedAt": "2026-09-19T21:46:35.325Z",
+  "reserve": {
+    "maxLtvBps": 9000,
+    "liquidationThresholdBps": 9200,
+    "liquidationBonusBps": 500,
+    "reserveAddress": "7j2swbvkuWBNSn4RpojtW34fnbCh9vkMMRXrPyv7gVdW"
+  },
+  "inputs": {
+    "fridayCloseUsd": 332.0068885877475,
+    "positionOpenedAtBorrowLimitUsd": 328.807703,
+    "debtPerUnitCollateralUsd": 295.9269327,
+    "liquidationPriceAtWeekendEndUsd": 359.633253,
+    "positionFlaggedLiquidatableOnceLiquidationPriceAtOrBelowUsd": 321.65970945652174,
+    "insolventWhenTruePriceBelowUsd": 295.9269327,
+    "insolvencyGapPct": 10.867231111143571,
+    "program": {
+      "liquidationAlphaBps": 1500,
+      "normalMaxMoveBps": 300,
+      "reopenMaxMoveBps": 5000
+    }
+  },
+  "references": [
+    {
+      "label": "Apple (AAPL), Fri Mar 13 2020 close to Mon Mar 16 2020 open",
+      "gapPct": 13,
+      "detail": "split-adjusted: close $67.05, next open $58.36 (-13.0%), next close $58.42 (-12.9%)",
+      "source": "https://www.statmuse.com/money/ask/apple-stock-price-march-2020",
+      "caveat": "third-party data aggregator; percentages are split-invariant"
+    },
+    {
+      "label": "Chainlink, 24/5 US equities guide",
+      "gapPct": null,
+      "detail": "describes session-transition jumps as \"typically 1-2%\" with spikes of \"10-20%+\" in low-liquidity or news-driven conditions",
+      "source": "https://docs.chain.link/data-streams/rwa-streams/24-5-us-equities-user-guide",
+      "caveat": "descriptive of observed behaviour, not a threshold or a forecast"
+    }
+  ],
+  "assumptions": [
+    "The borrower opened at the replay's peak Borrow-Limit Price at the reserve's maximum LTV: the worst case the reserve permits.",
+    "Monday's reopen print is the Friday close times (1 - gap), and the price then stays there. Further moves are not modelled; the last column prices them per 1%.",
+    "The Liquidation Price starts at its weekend-end value and moves by the deployed programs' update rule (15% of the gap per update; 50% clamp on the first post-reopen update, 3% after). Oracle confidence is assumed to be zero.",
+    "Whole-position liquidation with the reserve's bonus, and a liquidator only acts if the collateral received is worth at least the debt at the true price.",
+    "Not modelled: interest, slippage or market depth, partial liquidation, other borrowers, keeper latency (lag is counted in updates, not minutes)."
+  ],
+  "scenarios": [
+    {
+      "gapPct": 5,
+      "label": "5%",
+      "note": null,
+      "truePriceUsd": 315.4065441583601,
+      "collateralValueVsDebtPct": 6.5825747189113715,
+      "badDebtPer1MDebtUsd": 0,
+      "badDebtPctOfDebt": 0,
+      "flaggedLiquidatableAtWeekendEndPrice": false,
+      "healthyAtTruePrice": false,
+      "insolventAtTruePrice": false,
+      "updatesUntilFlaggedLiquidatable": 13,
+      "updatesUntilLiquidationExecutable": 13,
+      "extraBadDebtPerFurther1PctFallPer1MDebtUsd": 10658.257471891138
+    },
+    {
+      "gapPct": 10,
+      "label": "10%",
+      "note": null,
+      "truePriceUsd": 298.80619972897273,
+      "collateralValueVsDebtPct": 0.9729655231792034,
+      "badDebtPer1MDebtUsd": 0,
+      "badDebtPctOfDebt": 0,
+      "flaggedLiquidatableAtWeekendEndPrice": false,
+      "healthyAtTruePrice": false,
+      "insolventAtTruePrice": false,
+      "updatesUntilFlaggedLiquidatable": 7,
+      "updatesUntilLiquidationExecutable": 9,
+      "extraBadDebtPerFurther1PctFallPer1MDebtUsd": 10097.296552317921
+    },
+    {
+      "gapPct": 13,
+      "label": "13.0%",
+      "note": "size of AAPL's Mar 16 2020 open",
+      "truePriceUsd": 288.84599307134033,
+      "collateralValueVsDebtPct": -2.3927999942600975,
+      "badDebtPer1MDebtUsd": 23927.99994260096,
+      "badDebtPctOfDebt": 2.3927999942600957,
+      "flaggedLiquidatableAtWeekendEndPrice": false,
+      "healthyAtTruePrice": false,
+      "insolventAtTruePrice": true,
+      "updatesUntilFlaggedLiquidatable": 5,
+      "updatesUntilLiquidationExecutable": null,
+      "extraBadDebtPerFurther1PctFallPer1MDebtUsd": 9760.72000057399
+    },
+    {
+      "gapPct": 15,
+      "label": "15%",
+      "note": null,
+      "truePriceUsd": 282.2058552995854,
+      "collateralValueVsDebtPct": -4.636643672552965,
+      "badDebtPer1MDebtUsd": 46366.436725529675,
+      "badDebtPctOfDebt": 4.636643672552967,
+      "flaggedLiquidatableAtWeekendEndPrice": false,
+      "healthyAtTruePrice": false,
+      "insolventAtTruePrice": true,
+      "updatesUntilFlaggedLiquidatable": 5,
+      "updatesUntilLiquidationExecutable": null,
+      "extraBadDebtPerFurther1PctFallPer1MDebtUsd": 9536.335632744704
+    },
+    {
+      "gapPct": 20,
+      "label": "20%",
+      "note": null,
+      "truePriceUsd": 265.605510870198,
+      "collateralValueVsDebtPct": -10.246252868285154,
+      "badDebtPer1MDebtUsd": 102462.52868285155,
+      "badDebtPctOfDebt": 10.246252868285156,
+      "flaggedLiquidatableAtWeekendEndPrice": false,
+      "healthyAtTruePrice": false,
+      "insolventAtTruePrice": true,
+      "updatesUntilFlaggedLiquidatable": 4,
+      "updatesUntilLiquidationExecutable": null,
+      "extraBadDebtPerFurther1PctFallPer1MDebtUsd": 8975.374713171484
+    }
+  ],
+  "ltvSensitivity": [
+    {
+      "maxLtvPct": 90,
+      "insolvencyGapPct": 10.867231111143571,
+      "isDeployedConfig": true
+    },
+    {
+      "maxLtvPct": 75,
+      "insolvencyGapPct": 25.722692592619644,
+      "isDeployedConfig": false
+    },
+    {
+      "maxLtvPct": 60,
+      "insolvencyGapPct": 40.57815407409572,
+      "isDeployedConfig": false
+    }
+  ]
+}

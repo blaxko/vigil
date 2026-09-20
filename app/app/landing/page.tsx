@@ -2,7 +2,9 @@ import Link from "next/link";
 import { GlowField } from "@/components/GlowField";
 import { Marquee } from "@/components/Marquee";
 import { Reveal } from "@/components/Reveal";
-import { LiveHeroPreview } from "@/components/LiveHeroPreview";
+import { LiveProvider } from "@/components/LiveProvider";
+import { HeroDevices } from "@/components/HeroDevices";
+import { CtaPair, FaqSection, PricingCards, ProductShowcase, StatsGrid } from "@/components/LandingSections";
 
 export default function LandingPage() {
   return (
@@ -10,7 +12,8 @@ export default function LandingPage() {
       <nav className="lp-nav">
         <div className="lp-wordmark">Vigil</div>
         <div className="lp-nav-links">
-          <a href="#how-it-works">How It Works</a>
+          <a href="#pricing">How pricing works</a>
+          <a href="#faq">FAQ</a>
           <Link href="/replay">Weekend Replay</Link>
           <a href="https://github.com/blaxko/vigil" target="_blank" rel="noreferrer">
             GitHub
@@ -21,118 +24,48 @@ export default function LandingPage() {
         </Link>
       </nav>
 
-      <section className="lp-hero">
-        <div className="glow-field-wrap" style={{ position: "relative" }}>
-          <GlowField />
-          <div className="lp-container" style={{ position: "relative", zIndex: 1 }}>
-            <h1 className="lp-headline">
-              Borrow Against Your Stocks
-              <span className="gradient-text">Even When the Market&apos;s Closed.</span>
-            </h1>
-            <p className="lp-subhead">
-              Every tokenized-equity lending venue today freezes the price at Friday&apos;s close or
-              falls back to a thin, easily-moved DEX price. Vigil runs a continuous, dual-speed
-              anchor-decay-clamp pricing model instead &mdash; an oracle that knows the difference
-              between a live market and a closed one.
-            </p>
-            <p className="lp-who">
-              <strong>Built for</strong> anyone holding tokenized stock (like AAPLx) who needs USDC on a
-              Saturday &mdash; without selling the position or trusting a frozen Friday price.
-            </p>
-            <div className="lp-cta-row">
-              <Link href="/" className="btn-gradient">
-                Launch App
-              </Link>
-              <Link href="/replay" className="btn-outline">
-                View Weekend Replay
-              </Link>
-            </div>
-            <Reveal>
-              <LiveHeroPreview />
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      <Reveal>
-        <Marquee />
-      </Reveal>
-
-      <section className="lp-section" id="features">
-        <div className="lp-container">
-          <Reveal>
-            <div className="lp-section-head">
-              <h2 className="lp-section-title">Priced for reality, not just uptime</h2>
-              <p style={{ color: "var(--muted)", fontSize: 15 }}>
-                Every card below is a mechanism already built, tested, and verified on devnet &mdash;
-                not a roadmap item.
+      {/* One shared devnet poll + one Hermes poll feed every live card below. */}
+      <LiveProvider>
+        <section className="lp-hero">
+          <div className="glow-field-wrap" style={{ position: "relative" }}>
+            <GlowField />
+            <div className="lp-container" style={{ position: "relative", zIndex: 1 }}>
+              <h1 className="lp-headline">
+                Borrow Against Your Stocks
+                <span className="gradient-text">Even When the Market&apos;s Closed.</span>
+              </h1>
+              <p className="lp-subhead">
+                Common ways to handle a closed market are fixed conservative LTVs, hard staleness pauses, or
+                deviation checks that oracle providers such as Chainlink advise integrators to configure.
+                Vigil uses a continuous, dual-speed anchor-decay-clamp pricing model instead &mdash; a
+                regime-aware oracle that knows the difference between a live market and a closed one, built as
+                a module other lenders could adopt.
               </p>
+              <p className="lp-who">
+                <strong>Built for</strong> anyone holding tokenized stock (like AAPLx) who needs USDC on a
+                Saturday &mdash; without selling the position or trusting a frozen Friday price.
+              </p>
+              <div className="lp-cta-row">
+                <Link href="/" className="btn-gradient">
+                  Launch App
+                </Link>
+                <Link href="/replay" className="btn-outline">
+                  View Weekend Replay
+                </Link>
+              </div>
+              <HeroDevices />
             </div>
-          </Reveal>
-
-          <div className="bento-grid">
-            <Reveal className="bento-large">
-              <div className="bento-card">
-                <div className="bento-icon">&#9679;</div>
-                <div className="bento-title">Regime-Aware Oracle</div>
-                <div className="bento-body">
-                  A dual-price design: a slow-smoothed, conservative <strong style={{ color: "var(--green)" }}>Borrow-Limit Price</strong>{" "}
-                  and a fast-smoothed, wider-banded <strong style={{ color: "var(--blue)" }}>Liquidation Price</strong>. Over-borrow
-                  risk and unjust-liquidation risk are opposite failure modes &mdash; they never share
-                  one number or one smoothing speed. Through a closure, one tightens while the other
-                  widens, instead of both freezing together.
-                </div>
-              </div>
-            </Reveal>
-
-            <Reveal delay={80}>
-              <div className="bento-card">
-                <div className="bento-icon">&#8776;</div>
-                <div className="bento-title">Anchor-Decay-Clamp Pricing</div>
-                <div className="bento-body">
-                  No frozen price, no discontinuous reopen jump. Price decays smoothly from the last
-                  live print toward a liquidity-dampened DEX reference through a closure, clamped
-                  per-tick so no single update can move it too far at once.
-                </div>
-              </div>
-            </Reveal>
-
-            <Reveal delay={160}>
-              <div className="bento-card">
-                <div className="bento-icon">&#8635;</div>
-                <div className="bento-title">Real Historical Replay</div>
-                <div className="bento-body">
-                  The actual Sept 11&ndash;14 2026 weekend, replayed through the live devnet programs:
-                  149 on-chain ticks, 298 finalized transaction signatures. Not a simulation &mdash; a
-                  real, verifiable sequence.
-                </div>
-                <div className="bento-stat">
-                  <div>
-                    <div className="n">149</div>
-                    <div className="l">Ticks</div>
-                  </div>
-                  <div>
-                    <div className="n">298</div>
-                    <div className="l">Signatures</div>
-                  </div>
-                </div>
-              </div>
-            </Reveal>
-
-            <Reveal delay={240} className="bento-wide">
-              <div className="bento-card">
-                <div className="bento-icon">&#128274;</div>
-                <div className="bento-title">Full Transparency, By Design</div>
-                <div className="bento-body">
-                  Every demo screen says what is real and what is demo-controlled (today: the
-                  open/closed market-hours flag, and a Borrow-time oracle refresh that re-posts a stored replay reference price, not a live one). Every price update and every transaction is
-                  independently verifiable on-chain &mdash; no hidden simulation, ever.
-                </div>
-              </div>
-            </Reveal>
           </div>
-        </div>
-      </section>
+        </section>
+
+        <Reveal>
+          <Marquee />
+        </Reveal>
+
+        <ProductShowcase />
+        <PricingCards />
+        <StatsGrid />
+      </LiveProvider>
 
       <section className="lp-section" id="why-solana">
         <div className="lp-container">
@@ -171,6 +104,60 @@ export default function LandingPage() {
                   Continuous pricing means updating on-chain state all weekend &mdash; the replay posts 149
                   real ticks (298 transactions) across one closure, which only works with Solana&apos;s
                   low fees.
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      <section className="lp-section" id="where-it-fits">
+        <div className="lp-container">
+          <Reveal>
+            <div className="lp-section-head">
+              <h2 className="lp-section-title">Where Vigil fits</h2>
+              <p style={{ color: "var(--muted)", fontSize: 15 }}>
+                A pricing layer for tokenized-stock lending, not only another lending market.
+              </p>
+            </div>
+          </Reveal>
+
+          <div className="why-grid">
+            <Reveal>
+              <div className="bento-card">
+                <div className="bento-title">A module other lenders could adopt</div>
+                <div className="bento-body">
+                  Vigil ships with a lending market so the oracle can be seen working end to end, but the
+                  regime-aware oracle is its own on-chain program. A lender reads two prices and a regime
+                  flag from it; the lending logic here is one consumer, not a dependency.
+                </div>
+              </div>
+            </Reveal>
+            <Reveal delay={80}>
+              <div className="bento-card">
+                <div className="bento-title">What the guidance already says</div>
+                <div className="bento-body">
+                  Chainlink&apos;s{" "}
+                  <a href="https://docs.chain.link/data-feeds/tokenized-equity-feeds" target="_blank" rel="noreferrer" className="inline-link">
+                    tokenized-equity documentation
+                  </a>{" "}
+                  tells integrators to treat weekends and holidays as an expected state and to set deviation
+                  limits, leaving the thresholds to each protocol. It prescribes no number. Vigil is one
+                  concrete answer to the closed-market half of that.
+                </div>
+              </div>
+            </Reveal>
+            <Reveal delay={160}>
+              <div className="bento-card">
+                <div className="bento-title">Same hackathon, complementary scope</div>
+                <div className="bento-body">
+                  Sable (
+                  <a href="https://github.com/Mgabal/Stock-Lend" target="_blank" rel="noreferrer" className="inline-link">
+                    Mgabal/Stock-Lend
+                  </a>
+                  ) discloses in its README that its lending market uses a seeded reference rate, not a live
+                  oracle feed, and scopes real pricing out as future work. Pricing under a closed market is
+                  the layer Vigil focuses on.
                 </div>
               </div>
             </Reveal>
@@ -233,6 +220,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <FaqSection />
+      <CtaPair />
 
       <footer className="lp-footer">
         <div className="lp-container" style={{ display: "flex", justifyContent: "space-between", width: "100%", flexWrap: "wrap", gap: 12 }}>
