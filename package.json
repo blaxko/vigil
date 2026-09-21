@@ -12,7 +12,8 @@
     "replay:verify": "ts-node --project tsconfig.json scripts/replay/verify-signatures.ts",
     "replay:stress": "ts-node --project tsconfig.json scripts/replay/stress-test.ts",
     "oracle:refresh": "ts-node --project tsconfig.json scripts/refresh-oracle.ts",
-    "refill:vault": "ts-node --project tsconfig.json scripts/refill-debt-vault.ts"
+    "refill:vault": "ts-node --project tsconfig.json scripts/refill-debt-vault.ts",
+    "verify:real-pyth": "ts-node --project tsconfig.json scripts/verify-real-pyth.ts"
   },
   "devDependencies": {
     "@coral-xyz/anchor": "^0.32.1",

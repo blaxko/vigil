@@ -1,0 +1,33 @@
+{
+  "what": "regime_oracle.update_price (open-market path) reading a live Pyth SOL/USD PriceUpdateV2 account on devnet",
+  "notAapl": "SOL/USD stands in for AAPL: Pyth's AAPL accounts on devnet are not being updated",
+  "network": "devnet",
+  "signature": "5TiH4tmBGozaPA6hKZc6UHvgeKtuxxaRh7CZh385jVmxo8UbKTpd2Y5xwt2LLDynqQWvJbJwJ7K11YdQLT9ycmgA",
+  "explorer": "https://explorer.solana.com/tx/5TiH4tmBGozaPA6hKZc6UHvgeKtuxxaRh7CZh385jVmxo8UbKTpd2Y5xwt2LLDynqQWvJbJwJ7K11YdQLT9ycmgA?cluster=devnet",
+  "pythAccount": "7UVimffxr9ow1uXYxsr4LHAcV58mLzhmwaeKvJ1pjLiE",
+  "pythAccountOwner": "rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ",
+  "pythPublishTime": "2026-09-21T15:49:22.000Z",
+  "pythVerification": "Full",
+  "pythPriceUsd": 118.227268,
+  "pythConfUsd": 0.012731,
+  "oracleAnchorUsd": 118.227268,
+  "oracleBorrowLimitUsd": 117.550761,
+  "oracleLiquidationUsd": 117.638156,
+  "before": {
+    "borrowLimitUsd": 117.515826,
+    "liquidationUsd": 117.531949
+  },
+  "targets": {
+    "borrowLimitUsd": 118.214537,
+    "liquidationUsd": 118.239999
+  },
+  "checks": {
+    "anchorEqualsPythPrice": true,
+    "borrowLimitMatchesSmoothedPriceMinusConfidence": true,
+    "liquidationMatchesSmoothedPricePlusConfidence": true
+  },
+  "logs": [
+    "Program log: Instruction: UpdatePrice",
+    "Program 7PHoqxS9CQxy6vTmDCEqkmB1oNCeCotxFSPg3rKmDQUV success"
+  ]
+}

@@ -95,7 +95,17 @@ export function PythSection() {
               <p>
                 In this deployment the market is set to closed, so no Pyth price account is read. A mock Pyth program, which
                 writes the same <code>PriceUpdateV2</code> layout, fed the replay&apos;s warm-up and reopen ticks, because
-                Pyth&apos;s price endpoints need an API key and its AAPL account on devnet was last updated on July 2.
+                Pyth&apos;s price endpoints need an API key and its AAPL account on devnet was last updated on July 2. The
+                open-market path has read a live Pyth account once, for SOL/USD on devnet (
+                <a
+                  href="https://explorer.solana.com/tx/5TiH4tmBGozaPA6hKZc6UHvgeKtuxxaRh7CZh385jVmxo8UbKTpd2Y5xwt2LLDynqQWvJbJwJ7K11YdQLT9ycmgA?cluster=devnet"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-link"
+                >
+                  5TiH4t&hellip;ycmgA
+                </a>
+                ). That checks the ingestion code, not an AAPL market.
               </p>
             </div>
             <div>

@@ -86,6 +86,11 @@ environment — see "Submission checklist" at the bottom.**
       `price_feeds` metadata for the real AAPL feed — schedule only, not a
       price; while the market is set to closed the oracle reads no Pyth
       price account, see below)
+- [x] Real-Pyth ingestion proof (`npm run verify:real-pyth`): the oracle's
+      open-market path run against a live Pyth SOL/USD account on devnet
+      through Pyth's real receiver program, with the on-chain result checked
+      against the program's own smoothing math — see "Real-Pyth ingestion proof"
+      below
 - [ ] Demo recording + hackathon submission (this repo owner's action —
       see "Submission checklist" below)
 
@@ -401,6 +406,20 @@ authority is now `AfH8S3TU2vFVH6b6Z63vL5pmtK4fX5b3jsakHhjG6HSc`.
   no Pyth account at all: prices come from the closed-market blend of the
   oracle's anchor and the DEX reference stored on-chain from the replay. `mock_pyth`
   fed only the replay's 86 warm-up ticks and its reopen tick.
+
+## Real-Pyth ingestion proof
+
+Pyth's AAPL price accounts on devnet were last updated on July 2 and Hermes' price
+endpoints need a key, so there is no live AAPL price to read. Pyth's sponsored push
+feeds for SOL/USD and BTC/USD are live on devnet (about every five minutes), so
+`npm run verify:real-pyth` creates a separate oracle state for the SOL/USD feed with
+`pyth_receiver_program` set to Pyth's real receiver (`rec5EKMG…`), waits for a fresh
+publish, and runs `update_price` against Pyth's own account. It then checks that the
+anchor equals Pyth's price exactly and that the borrow-limit and liquidation prices equal
+the program's smoothing (price −/+ confidence, eased 5% / 15%, clamped 3%) applied to the
+prior state. Result: [`scripts/real-pyth-proof.json`](scripts/real-pyth-proof.json),
+transaction `5TiH4tmBGozaPA6hKZc6UHvgeKtuxxaRh7CZh385jVmxo8UbKTpd2Y5xwt2LLDynqQWvJbJwJ7K11YdQLT9ycmgA`
+(finalized). This verifies the ingestion code path, not an AAPL market.
 
 ## Future work / known limitations
 
