@@ -73,9 +73,8 @@ environment — see "Submission checklist" at the bottom.**
 - [x] All 298 unique replay signatures programmatically verified finalized
       via `getSignatureStatuses` (`npm run replay:verify`, not a spot check)
       — see `scripts/replay/signature-verification.json`
-- [x] Both frontend pages screenshot-verified actually rendering (not just
-      "the build passes") — see `screenshots/dashboard-page.png` and
-      `screenshots/replay-page-final.png`
+- [x] Frontend pages (`/`, `/app`, `/replay`) verified rendering real on-chain data
+      in a headless browser at 1440px and 390px, not just that `next build` passes
 - [x] On-screen disclosure: a Devnet status strip on `/` and `/app` (market hours set
       by hand, prices from a DEX reference stored on-chain from the replay and
       refreshed by Borrow, no Pyth price account read while the market is set to
@@ -218,21 +217,6 @@ check of a handful:
 ```
 
 Full per-signature output: `scripts/replay/signature-verification.json`.
-
-### Frontend screenshots (real renders, not a claim the build passes)
-
-- `screenshots/dashboard-page.png` — the dashboard (now at `/app`; earlier
-  captures predate the status strip), showing the devnet disclosure, live market panel, and deposit/borrow/repay forms.
-- `screenshots/replay-page-final.png` — `/replay`, showing the "Replaying
-  Sept 11&ndash;14 2026 weekend" badge, the GeckoTerminal-anchor-source
-  disclosure, and the real four-series comparison chart rendering
-  correctly (green Borrow-Limit trending down conservatively, blue
-  Liquidation widening protectively, red DEX-only oscillating with the raw
-  weekend swing, amber Frozen flat then jumping at reopen).
-
-Both captured with headless Edge against a running `next dev` server,
-confirming actual client-side rendering and data fetching, not just that
-`next build` exits 0.
 
 ### Real bugs found while building the replay harness (fixed, not just described)
 
