@@ -28,7 +28,12 @@ const FAUCET_AMOUNT_BASE = BigInt(10_000_000); // 10 AAPLx at 6 decimals
 
 const WALLET_COOLDOWN_MS = 30 * 60 * 1000; // one drip per wallet every 30 minutes
 const IP_LIMIT = 5; // per client address per hour
-const GLOBAL_LIMIT = 30; // per hour across everyone
+// Per hour across everyone. Each mint costs the mint authority about 0.0025 devnet SOL, so 60 bounds a flood at about
+// 0.15 SOL an hour, while leaving room for a group of people trying the faucet in the same window: a single client can
+// take at most IP_LIMIT of these, so it needs a dozen separate connections to shut the others out.
+const GLOBAL_LIMIT = 60;
+// Stop minting cleanly, with a clear message, rather than fail halfway when the mint authority runs low on SOL.
+const MIN_AUTHORITY_LAMPORTS = 20_000_000; // 0.02 SOL
 const WINDOW_MS = 60 * 60 * 1000;
 
 const lastByWallet = new Map<string, number>();
@@ -111,13 +116,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const mintAuthority = loadMintAuthority();
+    const authorityLamports = await connection.getBalance(mintAuthority.publicKey);
+    if (authorityLamports < MIN_AUTHORITY_LAMPORTS) {
+      console.error("[faucet] mint authority is low on SOL:", authorityLamports / 1e9);
+      return NextResponse.json({ error: "The test faucet is out of SOL right now. Please try again later." }, { status: 503 });
+    }
+
     // Reserve the slot now so parallel requests can't slip past the limits.
     walletKey = owner.toBase58();
     lastByWallet.set(walletKey, now);
     hitsByIp.set(ip, [...ipHits, now]);
     globalHits.push(now);
 
-    const mintAuthority = loadMintAuthority();
     const ata = await getOrCreateAssociatedTokenAccount(
       connection,
       mintAuthority,

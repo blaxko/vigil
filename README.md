@@ -139,10 +139,10 @@ npm run refill:vault                       # tops the mock-USDC debt vault back 
 ```
 
 The test-token faucet (`/api/faucet`) mints 10 AAPLx per request and is limited to one
-request per wallet per 30 minutes, five per connection per hour and thirty per hour overall,
+request per wallet per 30 minutes, five per connection per hour and sixty per hour overall,
 because each mint spends the mint authority's devnet SOL and unlimited AAPLx would let one
-caller borrow the market's whole USDC balance. The limits are in-memory (they reset when the
-server restarts).
+caller borrow the market's whole USDC balance. It stops with a clear message if the mint
+authority drops below 0.02 SOL. The limits are in-memory (they reset when the server restarts).
 
 `seed-devnet.ts` writes `scripts/devnet-config.json` (addresses) and prints
 the `NEXT_PUBLIC_*` lines for `app/.env.local`. `devnet-demo.ts` persists
