@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { WalletMultiButton, useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { AnchorProvider, BN } from "@coral-xyz/anchor";
 import { PublicKey, SystemProgram, Transaction, VersionedTransaction } from "@solana/web3.js";
 import {
@@ -17,6 +17,7 @@ import { getLendingMarketProgram, getProvider } from "@/lib/anchor";
 import { collateralVaultPda, debtVaultPda, positionPda, regimeStatePda, reservePda, reserveAuthorityPda } from "@/lib/pda";
 import { useVigilState } from "@/lib/useVigilState";
 import { PythMarketRow } from "@/components/PythMarketRow";
+import { SiteNav } from "@/components/SiteNav";
 
 const fmtUsd = (micro: BN) => `$${(Number(micro) / PRICE_SCALE).toFixed(2)}`;
 
@@ -66,11 +67,11 @@ function describeTxError(err: unknown): string {
     /AccountNotFound|InsufficientFundsForFee|InsufficientFundsForRent|no record of a prior credit/i.test(msg) ||
     (/insufficient/i.test(msg) && /lamports/i.test(msg))
   )
-    return "Your wallet does not have enough devnet SOL for fees and account rent (a first deposit or borrow creates accounts that cost a few thousandths of a SOL). Get some at faucet.solana.com, then try again.";
+    return "Your wallet needs a little devnet SOL for fees and account rent. A first deposit or borrow creates accounts that cost a few thousandths of a SOL. Get some at faucet.solana.com, then try again.";
   if (/AccountNotInitialized/.test(msg)) return "A required token account does not exist yet for this wallet.";
   if (/0x1\b/.test(msg) || /insufficient funds/i.test(msg)) return "Insufficient token balance.";
   if (/StalePythPrice|StaleOraclePrices/.test(msg))
-    return "Demo mode: the automatic oracle refresh did not run, so the on-chain price is stale. It only works while the regime is closed, and it re-posts a stored replay reference price, not a live one. Deposits and repayments are unaffected.";
+    return "The oracle price is out of date and the automatic refresh didn't run. The refresh only works while pricing mode is closed. Deposits and repayments still work.";
   if (/BorrowLimitExceeded/.test(msg)) return "Amount exceeds your current borrow limit.";
   if (/WithdrawalExceedsLimit/.test(msg)) return "Withdrawal would leave the position under-collateralized.";
   if (/PositionHoldTimeActive/.test(msg)) return "Position is still within its minimum hold time after the last borrow.";
@@ -82,7 +83,7 @@ function describeTxError(err: unknown): string {
   return msg.split("\n")[0];
 }
 
-/** Demo mode: asks the server to refresh the oracle before Borrow, because
+/** Asks the server to refresh the oracle before Borrow, because
  * this build has no continuously-running keeper and the lending program
  * rejects prices older than 180 s. The route re-posts the DEX reference price
  * already stored on-chain (Sept 11-14 replay data) -- it is NOT a live price --
@@ -99,12 +100,12 @@ async function refreshDemoOracle(): Promise<void> {
 export function Dashboard() {
   const { connection } = useConnection();
   const wallet = useWallet();
+  const { setVisible: openWalletModal } = useWalletModal();
   const { configured, regimeState, position, reserve, collateralBalance, readError, refresh } = useVigilState();
 
   const [depositAmount, setDepositAmount] = useState("");
   const [borrowAmount, setBorrowAmount] = useState("");
   const [repayAmount, setRepayAmount] = useState("");
-
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorLogs, setErrorLogs] = useState<string[]>([]);
@@ -167,7 +168,10 @@ export function Dashboard() {
         body: JSON.stringify({ wallet: wallet.publicKey.toBase58() }),
       });
       const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? "Faucet request failed.");
+      if (!res.ok) {
+        console.error("[vigil] faucet request failed", body);
+        throw new Error("The test-token faucet is unavailable right now. Try again in a moment.");
+      }
       return body.signature as string;
     });
 
@@ -177,7 +181,7 @@ export function Dashboard() {
       const amount = Number(borrowAmount);
       if (!amount || amount <= 0) throw new Error("Enter a positive borrow amount.");
 
-      setPending("Refreshing demo oracle price...");
+      setPending("Refreshing oracle price...");
       await refreshDemoOracle();
       setPending("Borrowing USDC...");
 
@@ -254,6 +258,21 @@ export function Dashboard() {
   const availableToBorrow = maxBorrowable !== null ? Math.max(0, maxBorrowable - debtUsd) : null;
   const hasPosition = collateralUi > 0 || debtUsd > 0;
 
+  // Health factor and liquidation trigger use the same formula as the program's
+  // health_factor_bps: collateral valued at the Liquidation Price, scaled by the
+  // reserve's liquidation threshold, divided by debt. Read-only, derived from state
+  // already fetched.
+  const liqThreshold = reserve ? reserve.liquidationThresholdBps / 10_000 : null;
+  const liqPriceUsd = regimeState ? Number(regimeState.liquidationPrice) / PRICE_SCALE : null;
+  const healthFactor =
+    debtUsd > 0 && collateralUi > 0 && liqThreshold !== null && liqPriceUsd !== null
+      ? (collateralUi * liqPriceUsd * liqThreshold) / debtUsd
+      : null;
+  const healthTone = healthFactor === null ? "" : healthFactor < 1.1 ? "c-red" : healthFactor < 1.5 ? "c-amber" : "c-green";
+  const liquidationTrigger =
+    debtUsd > 0 && collateralUi > 0 && liqThreshold !== null ? debtUsd / (collateralUi * liqThreshold) : null;
+  const pct = (bps: number) => (bps / 100).toFixed(bps % 100 === 0 ? 0 : 1) + "%";
+
   // Inline validation: empty input is neutral; anything else is checked before
   // the wallet is ever asked to sign.
   const validate = (raw: string, check: (n: number) => string | null): string | null => {
@@ -281,274 +300,298 @@ export function Dashboard() {
   );
 
   return (
-    <div className="page">
-      <div className="glow-field">
-        <div className="glow-blob left" />
-        <div className="glow-blob right" />
-      </div>
-      <div className="header" style={{ position: "relative", zIndex: 1 }}>
-        <a href="/landing" className="title">
-          Vigil<span className="title-sub hide-sm">Dashboard</span>
-        </a>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <a href="/replay" className="hdr-link">
-            Weekend Replay &rarr;
-          </a>
-          <WalletMultiButton />
+    <>
+      <SiteNav right={<WalletMultiButton />} />
+      <div className="page">
+        <div className="glow-field">
+          <div className="glow-blob left" />
+          <div className="glow-blob right" />
+        </div>
+
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div className="page-head">
+            <h1 className="page-title">AAPLx market</h1>
+            <p className="page-sub">Deposit tokenized Apple stock and borrow USDC against it, including nights and weekends.</p>
+          </div>
+
+          {!configured && (
+            <div className="panel">
+              <div className="error">Vigil can&apos;t reach its devnet deployment right now. Try again in a few minutes.</div>
+            </div>
+          )}
+
+          {configured && (
+            <>
+              <div className="status-bar dash-status">
+                <span className="status-badge">Devnet</span>
+                <p className="status-text">
+                  Test tokens with no real value. Pricing mode is switched manually in this deployment.
+                </p>
+                <details className="status-details">
+                  <summary>Details</summary>
+                  <p>
+                    Vigil&apos;s oracle takes market hours as an input, and a keeper watching real exchange hours would
+                    normally supply it. This deployment has no keeper, so the open/closed switch is set by hand and
+                    Pyth&apos;s live schedule is shown beside it. Borrow also refreshes the oracle with a reference
+                    price stored on-chain from the Sept 11&ndash;14 replay, not a live price. The pricing math, position
+                    accounting and every deposit, borrow and repay run on the deployed programs.
+                  </p>
+                </details>
+              </div>
+
+              <div className="panel">
+                <div className="section-title">Market</div>
+                <div className="row">
+                  <span className="label">Pricing mode</span>
+                  <span className={`badge badge-nowrap ${regimeState?.isOpen ? "open" : "closed"}`}>
+                    {regimeState ? (regimeState.isOpen ? "Open · live price" : "Closed · prices converging") : "Loading…"}
+                  </span>
+                </div>
+                <div className="gloss">
+                  While the stock market is open, Vigil prices from the live feed. While it is closed, Vigil stops trusting
+                  the last print and moves its two prices apart gradually. Switched manually on devnet.
+                </div>
+                <PythMarketRow onchainIsOpen={regimeState ? regimeState.isOpen : null} />
+                <div className="price-tiles">
+                  <div className="tag-card compact">
+                    <span className="tag tag-green">Borrow-Limit Price</span>
+                    <div className="price-tile-value c-green">
+                      {regimeState ? fmtUsd(regimeState.borrowLimitPrice) : <span className="skeleton" role="status" aria-label="Loading price" />}
+                    </div>
+                    <p className="tag-card-body">
+                      {regimeState
+                        ? `Each AAPLx of collateral counts as ${fmtUsd(regimeState.borrowLimitPrice)} when you borrow. Tightens through closures.`
+                        : "The conservative price your collateral is valued at when you borrow."}
+                    </p>
+                  </div>
+                  <div className="tag-card compact">
+                    <span className="tag tag-blue">Liquidation Price</span>
+                    <div className="price-tile-value c-blue">
+                      {regimeState ? fmtUsd(regimeState.liquidationPrice) : <span className="skeleton" role="status" aria-label="Loading price" />}
+                    </div>
+                    <p className="tag-card-body">
+                      {regimeState
+                        ? `Liquidation is checked against ${fmtUsd(regimeState.liquidationPrice)} per AAPLx. It is deliberately wider, so a brief weekend dip can't liquidate you unfairly. Widens through closures.`
+                        : "A deliberately wider price used only for liquidation checks."}
+                    </p>
+                  </div>
+                </div>
+                <div className="param-grid" aria-label="Reserve parameters">
+                  <div className="param">
+                    <span>Max LTV</span>
+                    <b>{reserve ? pct(reserve.maxLtvBps) : "—"}</b>
+                  </div>
+                  <div className="param">
+                    <span>Liquidation threshold</span>
+                    <b>{reserve ? pct(reserve.liquidationThresholdBps) : "—"}</b>
+                  </div>
+                  <div className="param">
+                    <span>Liquidator bonus</span>
+                    <b>{reserve ? pct(reserve.liquidationBonusBps) : "—"}</b>
+                  </div>
+                  <div className="param">
+                    <span>Deposited / borrowed</span>
+                    <b>
+                      {reserve
+                        ? `${(Number(reserve.totalCollateralBase) / 10 ** COLLATERAL_DECIMALS).toFixed(2)} AAPLx / $${(Number(reserve.totalDebt) / 10 ** 6).toFixed(2)}`
+                        : "—"}
+                    </b>
+                  </div>
+                </div>
+                {readError && (
+                  <div className="error">Couldn&apos;t load on-chain data from devnet. Retrying automatically.</div>
+                )}
+              </div>
+
+              <div className="panel">
+                <div className="section-title">Your Position</div>
+                {!wallet.connected && (
+                  <div className="empty-state">
+                    <p>Connect a wallet on Solana devnet to see your balance and open a position.</p>
+                    <button type="button" className="empty-cta" onClick={() => openWalletModal(true)}>
+                      Connect wallet
+                    </button>
+                    <details className="empty-help">
+                      <summary>Setting up a devnet wallet</summary>
+                      <p>
+                        Switch your wallet to devnet (Phantom: Settings &rarr; Developer Settings &rarr; Testnet Mode;
+                        Solflare: Settings &rarr; Network &rarr; Devnet) and keep a little devnet SOL for fees from{" "}
+                        <a href="https://faucet.solana.com" target="_blank" rel="noreferrer">faucet.solana.com</a>.
+                        &ldquo;Get Test AAPLx&rdquo; mints the test token only, not SOL.
+                      </p>
+                    </details>
+                  </div>
+                )}
+                {wallet.connected && !hasPosition && (
+                  <div className="empty-state">
+                    <p>No position yet. Get some test AAPLx, then deposit it below to open one.</p>
+                  </div>
+                )}
+                <div className="row">
+                  <span className="label">Wallet AAPLx balance</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span className="value">{walletUi.toFixed(4)}</span>
+                    <button disabled={!wallet.connected || !!pending} onClick={handleFaucet} style={{ fontSize: 12, padding: "4px 10px" }}>
+                      Get Test AAPLx
+                    </button>
+                  </span>
+                </div>
+                <div className="pos-tiles">
+                  <div className="stat-tile">
+                    <div className="stat-label">Deposited collateral</div>
+                    <div className="stat-value">{collateralUi.toFixed(4)}</div>
+                    <div className="stat-note">AAPLx</div>
+                  </div>
+                  <div className="stat-tile">
+                    <div className="stat-label">Outstanding debt</div>
+                    <div className="stat-value">{"$" + debtUsd.toFixed(2)}</div>
+                    <div className="stat-note">USDC</div>
+                  </div>
+                  <div className="stat-tile">
+                    <div className="stat-label">Max borrowable</div>
+                    <div className="stat-value">{maxBorrowable !== null ? `$${maxBorrowable.toFixed(2)}` : "—"}</div>
+                    <div className="stat-note">at the Borrow-Limit Price</div>
+                  </div>
+                  <div className="stat-tile">
+                    <div className="stat-label">Health factor</div>
+                    <div className={`stat-value ${healthTone}`}>{healthFactor !== null ? healthFactor.toFixed(2) : "—"}</div>
+                    <div className="stat-note">{debtUsd > 0 ? "Liquidatable below 1.00" : "Shown once you borrow"}</div>
+                  </div>
+                  <div className="stat-tile">
+                    <div className="stat-label">Liquidation trigger</div>
+                    <div className="stat-value">{liquidationTrigger !== null ? `$${liquidationTrigger.toFixed(2)}` : "—"}</div>
+                    <div className="stat-note">
+                      {liquidationTrigger !== null && liqPriceUsd !== null
+                        ? `Liquidation Price now $${liqPriceUsd.toFixed(2)}`
+                        : "Liquidation Price at which you'd be liquidated"}
+                    </div>
+                  </div>
+                  <div className="stat-tile">
+                    <div className="stat-label">Available to borrow</div>
+                    <div className="stat-value">{availableToBorrow !== null ? `$${availableToBorrow.toFixed(2)}` : "—"}</div>
+                    <div className="stat-note">Max borrowable less debt</div>
+                  </div>
+                </div>
+              </div>
+
+              {!wallet.connected && <div className="field-hint form-hint">Connect a wallet to use the forms below.</div>}
+
+              <div className="panel">
+                <div className="section-title">Deposit Collateral</div>
+                <div className="form-row">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="any"
+                    placeholder="AAPLx amount"
+                    aria-label="AAPLx amount to deposit"
+                    aria-invalid={!!depositErr}
+                    value={depositAmount}
+                    onChange={(e) => setDepositAmount(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="secondary max"
+                    disabled={!wallet.connected || !!pending || walletUi <= 0}
+                    onClick={() => setDepositAmount(String(walletUi))}
+                  >
+                    Max
+                  </button>
+                  <button disabled={!wallet.connected || !!pending || !depositAmount || !!depositErr} onClick={handleDeposit}>
+                    Deposit
+                  </button>
+                </div>
+                {depositErr && <div className="field-error" role="alert">{depositErr}</div>}
+              </div>
+
+              <div className="panel">
+                <div className="section-title">Borrow USDC</div>
+                <div className="gloss">
+                  Before each borrow, Vigil refreshes the oracle with the reference price stored on-chain from the Sept
+                  11&ndash;14 replay. It is not a live price, and the refresh only runs while pricing mode is closed.
+                </div>
+                <div className="form-row">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="any"
+                    placeholder="USDC amount"
+                    aria-label="USDC amount to borrow"
+                    aria-invalid={!!borrowErr}
+                    value={borrowAmount}
+                    onChange={(e) => setBorrowAmount(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="secondary max"
+                    disabled={!wallet.connected || !!pending || !availableToBorrow}
+                    onClick={() => setBorrowAmount(String(Math.floor((availableToBorrow ?? 0) * 100) / 100))}
+                  >
+                    Max
+                  </button>
+                  <button disabled={!wallet.connected || !!pending || !borrowAmount || !!borrowErr} onClick={handleBorrow}>
+                    Borrow
+                  </button>
+                </div>
+                {borrowErr && <div className="field-error" role="alert">{borrowErr}</div>}
+              </div>
+
+              <div className="panel">
+                <div className="section-title">Repay</div>
+                <div className="form-row">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="any"
+                    placeholder="USDC amount"
+                    aria-label="USDC amount to repay"
+                    aria-invalid={!!repayErr}
+                    value={repayAmount}
+                    onChange={(e) => setRepayAmount(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="secondary max"
+                    disabled={!wallet.connected || !!pending || debtUsd <= 0}
+                    onClick={() => setRepayAmount(String(debtUsd))}
+                  >
+                    Max
+                  </button>
+                  <button disabled={!wallet.connected || !!pending || !repayAmount || !!repayErr} onClick={handleRepay}>
+                    Repay
+                  </button>
+                </div>
+                {repayErr && <div className="field-error" role="alert">{repayErr}</div>}
+              </div>
+              {pending && (
+                <div className="pending" role="status">
+                  <span className="spinner" aria-hidden="true" />
+                  {pending}
+                </div>
+              )}
+              {error && <div className="error">{error}</div>}
+              {errorLogs.length > 0 && (
+                <details className="tx-logs">
+                  <summary>Technical details</summary>
+                  <pre>{errorLogs.join("\n")}</pre>
+                </details>
+              )}
+              {lastSig && (
+                <div className="success" role="status">
+                  Transaction confirmed &middot;{" "}
+                  <a href={"https://explorer.solana.com/tx/" + lastSig + "?cluster=devnet"} target="_blank" rel="noreferrer" style={{ color: "inherit" }}>
+                    View on Solana Explorer &#8599;
+                  </a>
+                  <span className="sig"> {lastSig.slice(0, 8)}&hellip;{lastSig.slice(-6)}</span>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
-
-      <div style={{ position: "relative", zIndex: 1 }}>
-      {!configured && (
-        <div className="panel">
-          <div className="error">
-            No devnet deployment configured yet. Set NEXT_PUBLIC_AAPLX_MINT, NEXT_PUBLIC_USDC_MINT, and
-            NEXT_PUBLIC_FEED_ID (see .env.example) after running the devnet seed script.
-          </div>
-        </div>
-      )}
-
-      {configured && (
-        <>
-          <div className="panel intro-strip">
-            <p>
-              <strong>Vigil</strong> is a lending market for tokenized stocks: deposit AAPLx as collateral and
-              borrow USDC against it &mdash; including nights and weekends, when the stock market is closed.
-            </p>
-            <p>
-              Instead of one price, Vigil uses two: a conservative <span style={{ color: "var(--green)" }}>Borrow-Limit
-              Price</span> that caps how much you can borrow, and a wider <span style={{ color: "var(--blue)" }}>Liquidation
-              Price</span> that keeps a thin, easily-moved weekend market from liquidating you unfairly.
-            </p>
-          </div>
-
-          <div className="panel notice-strip">
-            <span className="notice-tag">Before you connect</span>
-            <p>
-              Vigil runs on Solana <strong>devnet</strong>. Switch your wallet to devnet first (Phantom: Settings &rarr;
-              Developer Settings &rarr; Testnet Mode; Solflare: Settings &rarr; Network &rarr; Devnet) and keep a little
-              devnet SOL for fees (<a href="https://faucet.solana.com" target="_blank" rel="noreferrer">faucet.solana.com</a>).
-              &ldquo;Get Test AAPLx&rdquo; mints the test token only, not SOL.
-            </p>
-          </div>
-
-          <div className="panel disclosure">
-            <span className="disclosure-tag">Disclosed design choice</span>
-            <h2 className="disclosure-title">Demo mode: market hours set by hand, price refresh uses stored replay data</h2>
-            <p className="disclosure-lead">
-              The on-chain open/closed flag is set manually (Pyth&apos;s real market hours are shown beside it), and
-              Borrow triggers an oracle refresh that re-posts a stored replay reference price, not a live one.
-              Every deposit, borrow and repay is still a real, unscripted transaction on the deployed devnet program.
-            </p>
-            <details>
-              <summary>Details</summary>
-              <p>
-                Vigil&apos;s oracle takes market hours as an input. Feeding it automatically needs a
-                continuously-running off-chain keeper watching real NYSE hours, which is separate
-                infrastructure from the on-chain programs built here. So the regime flag reflects
-                on-chain state, not a live market-hours check performed at this instant. Only that
-                open/closed input is demo-controlled &mdash; the pricing math, the position accounting
-                and every transaction are the real deployed programs. Likewise, with no keeper running,
-                pressing Borrow first triggers a demo oracle refresh that re-posts the DEX reference price
-                already stored on-chain from the Sept 11&ndash;14 replay: a stored price, not a live one.
-              </p>
-            </details>
-          </div>
-
-          <div className="panel">
-            <div className="section-title">Market</div>
-            <div className="row">
-              <span className="label">On-chain regime <span style={{ whiteSpace: "nowrap" }}>(demo-set)</span></span>
-              <span className={`badge badge-nowrap ${regimeState?.isOpen ? "open" : "closed"}`}>
-                {regimeState ? (regimeState.isOpen ? "Open" : "Closed — Converging") : "Loading..."}
-              </span>
-            </div>
-            <PythMarketRow onchainIsOpen={regimeState ? regimeState.isOpen : null} />
-            <div className="price-tiles">
-              <div className="tag-card compact">
-                <span className="tag tag-green">Borrow-Limit Price</span>
-                <div className="price-tile-value c-green">
-                  {regimeState ? fmtUsd(regimeState.borrowLimitPrice) : <span className="skeleton" role="status" aria-label="Loading price" />}
-                </div>
-                <p className="tag-card-body">
-                  {regimeState
-                    ? `When you borrow, each AAPLx of collateral is valued at ${fmtUsd(regimeState.borrowLimitPrice)}. Tightens through closures.`
-                    : "The conservative price your collateral is valued at when you borrow."}
-                </p>
-              </div>
-              <div className="tag-card compact">
-                <span className="tag tag-blue">Liquidation Price</span>
-                <div className="price-tile-value c-blue">
-                  {regimeState ? fmtUsd(regimeState.liquidationPrice) : <span className="skeleton" role="status" aria-label="Loading price" />}
-                </div>
-                <p className="tag-card-body">
-                  {regimeState
-                    ? `Liquidation is checked against ${fmtUsd(regimeState.liquidationPrice)} per AAPLx — deliberately wider, so a brief weekend dip can't liquidate you unfairly. Widens through closures.`
-                    : "A deliberately wider price used only for liquidation checks."}
-                </p>
-              </div>
-            </div>
-            {readError && <div className="error">Failed to load on-chain state: {readError}</div>}
-          </div>
-
-          <div className="panel">
-            <div className="section-title">Your Position</div>
-            {!wallet.connected && (
-              <div className="empty-state">Connect a wallet to see your balance and position.</div>
-            )}
-            {wallet.connected && !hasPosition && (
-              <div className="empty-state">
-                No position yet. Get some test AAPLx, then deposit it below to open one.
-              </div>
-            )}
-            <div className="row">
-              <span className="label">Wallet AAPLx balance</span>
-              <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span className="value">{walletUi.toFixed(4)}</span>
-                <button disabled={!wallet.connected || !!pending} onClick={handleFaucet} style={{ fontSize: 12, padding: "4px 10px" }}>
-                  Get Test AAPLx
-                </button>
-              </span>
-            </div>
-            <div className="pos-tiles">
-              <div className="stat-tile">
-                <div className="stat-label">Deposited collateral</div>
-                <div className="stat-value">{collateralUi.toFixed(4)}</div>
-                <div className="stat-note">AAPLx</div>
-              </div>
-              <div className="stat-tile">
-                <div className="stat-label">Outstanding debt</div>
-                <div className="stat-value">{"$" + debtUsd.toFixed(2)}</div>
-                <div className="stat-note">USDC</div>
-              </div>
-              <div className="stat-tile">
-                <div className="stat-label">Max borrowable (est.)</div>
-                <div className="stat-value">{maxBorrowable !== null ? `$${maxBorrowable.toFixed(2)}` : "—"}</div>
-                <div className="stat-note">at the Borrow-Limit Price</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="panel">
-            <div className="section-title">Deposit Collateral</div>
-            <div className="form-row">
-              <input
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="any"
-                placeholder="AAPLx amount"
-                aria-label="AAPLx amount to deposit"
-                aria-invalid={!!depositErr}
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
-              />
-              <button
-                type="button"
-                className="secondary max"
-                disabled={!wallet.connected || !!pending || walletUi <= 0}
-                onClick={() => setDepositAmount(String(walletUi))}
-              >
-                Max
-              </button>
-              <button disabled={!wallet.connected || !!pending || !depositAmount || !!depositErr} onClick={handleDeposit}>
-                Deposit
-              </button>
-            </div>
-            {depositErr && <div className="field-error" role="alert">{depositErr}</div>}
-            {!wallet.connected && <div className="field-hint">Connect a wallet to deposit.</div>}
-          </div>
-
-          <div className="panel">
-            <div className="section-title">Borrow USDC</div>
-            <div className="gloss">
-              Demo mode: before you borrow, the app refreshes the oracle by re-posting the DEX reference price
-              already stored on-chain from the Sept 11&ndash;14 replay &mdash; a stored price, not a live one. It only
-              runs while the on-chain regime is closed.
-            </div>
-            <div className="form-row">
-              <input
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="any"
-                placeholder="USDC amount"
-                aria-label="USDC amount to borrow"
-                aria-invalid={!!borrowErr}
-                value={borrowAmount}
-                onChange={(e) => setBorrowAmount(e.target.value)}
-              />
-              <button
-                type="button"
-                className="secondary max"
-                disabled={!wallet.connected || !!pending || !availableToBorrow}
-                onClick={() => setBorrowAmount(String(Math.floor((availableToBorrow ?? 0) * 100) / 100))}
-              >
-                Max
-              </button>
-              <button disabled={!wallet.connected || !!pending || !borrowAmount || !!borrowErr} onClick={handleBorrow}>
-                Borrow
-              </button>
-            </div>
-            {borrowErr && <div className="field-error" role="alert">{borrowErr}</div>}
-            {!wallet.connected && <div className="field-hint">Connect a wallet to borrow.</div>}
-          </div>
-
-          <div className="panel">
-            <div className="section-title">Repay</div>
-            <div className="form-row">
-              <input
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="any"
-                placeholder="USDC amount"
-                aria-label="USDC amount to repay"
-                aria-invalid={!!repayErr}
-                value={repayAmount}
-                onChange={(e) => setRepayAmount(e.target.value)}
-              />
-              <button
-                type="button"
-                className="secondary max"
-                disabled={!wallet.connected || !!pending || debtUsd <= 0}
-                onClick={() => setRepayAmount(String(debtUsd))}
-              >
-                Max
-              </button>
-              <button disabled={!wallet.connected || !!pending || !repayAmount || !!repayErr} onClick={handleRepay}>
-                Repay
-              </button>
-            </div>
-            {repayErr && <div className="field-error" role="alert">{repayErr}</div>}
-            {!wallet.connected && <div className="field-hint">Connect a wallet to repay.</div>}
-          </div>
-
-          {pending && (
-            <div className="pending" role="status">
-              <span className="spinner" aria-hidden="true" />
-              {pending}
-            </div>
-          )}
-          {error && <div className="error">{error}</div>}
-          {errorLogs.length > 0 && (
-            <details className="tx-logs">
-              <summary>Simulation logs</summary>
-              <pre>{errorLogs.join("\n")}</pre>
-            </details>
-          )}
-          {lastSig && (
-            <div className="success" role="status">
-              Transaction confirmed &middot;{" "}
-              <a href={"https://explorer.solana.com/tx/" + lastSig + "?cluster=devnet"} target="_blank" rel="noreferrer" style={{ color: "inherit" }}>
-                View on Solana Explorer &#8599;
-              </a>
-              <span className="sig"> {lastSig.slice(0, 8)}&hellip;{lastSig.slice(-6)}</span>
-            </div>
-          )}
-        </>
-      )}
-      </div>
-    </div>
+    </>
   );
 }

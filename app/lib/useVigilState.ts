@@ -23,11 +23,15 @@ export type Position = {
 
 export type Reserve = {
   maxLtvBps: number;
+  liquidationThresholdBps: number;
+  liquidationBonusBps: number;
+  totalCollateralBase: BN;
+  totalDebt: BN;
 };
 
 /**
  * The single source of truth for reading Vigil's real on-chain state --
- * used by both the dashboard (/) and the landing page's live hero
+ * used by both the dashboard (/app) and the landing page's live hero
  * preview, so there is exactly one place that knows how to fetch and
  * decode RegimeState/Reserve/Position, not two copies that could drift
  * apart or reintroduce the account-name-casing bug fixed earlier.

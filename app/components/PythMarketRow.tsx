@@ -38,8 +38,8 @@ export function regimesDiffer(state: PythMarketHoursState, onchainIsOpen?: boole
 /**
  * One row showing Pyth's live AAPL market-hours status, clearly labelled as
  * market-hours metadata (not price data). If `onchainIsOpen` is passed and
- * disagrees with Pyth, says so plainly: the on-chain flag is set by hand in
- * demo mode, so a mismatch is expected and disclosed, not hidden.
+ * disagrees with Pyth, says so plainly: the on-chain flag is switched by hand
+ * on devnet, so a mismatch is expected and disclosed, not hidden.
  *
  * `PythMarketRowView` takes the Pyth state as a prop (so a page can share one
  * fetch across several components); `PythMarketRow` fetches its own.
@@ -53,12 +53,12 @@ export function PythMarketRowView({ state, onchainIsOpen }: { state: PythMarketH
         <PythStatusBadge state={state} />
       </div>
       <div className="gloss">
-        Live from Pyth (Hermes). Market-hours metadata only &mdash; not a price.
+        Live from Pyth (Hermes). This is the exchange schedule, not a price.
         {mismatch && (
           <>
             {" "}
             <span style={{ color: "var(--amber)" }}>
-              The on-chain flag is set by hand in demo mode, so it differs from Pyth right now; a keeper would sync them.
+              Pricing mode is switched manually on devnet, so it currently differs from Pyth&apos;s schedule.
             </span>
           </>
         )}

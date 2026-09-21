@@ -37,7 +37,7 @@ export function ReplaySparkChart() {
       .catch(() => setError(true));
   }, []);
 
-  if (error) return <div className="spark-foot">Replay data unavailable.</div>;
+  if (error) return <div className="spark-foot">The replay chart couldn&apos;t load. Refresh to try again.</div>;
   if (!points) return <div className="chart-skeleton" style={{ aspectRatio: `${W} / ${H}` }} role="status" aria-label="Loading replay chart" />;
 
   const all = points.flatMap((p) => SERIES.map((s) => p[s.key]));

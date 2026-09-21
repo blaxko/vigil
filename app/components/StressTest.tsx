@@ -60,7 +60,8 @@ export function StressTest() {
   }, []);
 
   if (error) {
-    return <div className="error">Could not load stress-test data: {error}. Run `npm run replay:stress` and copy the output into app/public/.</div>;
+    console.error("[vigil] stress-test data failed to load", error);
+    return <div className="error">The stress test couldn&apos;t load. Refresh the page to try again.</div>;
   }
   if (!data) {
     return <div className="chart-skeleton" role="status" aria-label="Loading stress-test data" style={{ aspectRatio: "760 / 260" }} />;
@@ -78,17 +79,16 @@ export function StressTest() {
       <span className="stress-tag">Hypothetical &middot; not historical</span>
       <h2 className="stress-title">Stress test: a Monday gap-down against the widened Liquidation Price</h2>
       <p className="stress-lead">
-        Nothing in this section is historical or on-chain. It asks: for a borrower who opened at the maximum LTV,
-        what would a weekend gap cost, given the Liquidation Price Vigil is carrying into Monday? The only invented
-        input is the size of the gap; the reserve parameters, the weekend prices and the update rule are the real
-        deployed ones. It is computed by <code>npm run replay:stress</code>.
+        Nothing in this section is historical or on-chain. It asks what a Monday gap-down would cost a borrower who
+        opened at the maximum LTV, given the Liquidation Price Vigil is carrying into Monday. The size of the gap is
+        the only invented input; the reserve parameters, the weekend prices and the update rule are the deployed ones.
       </p>
 
       <div className="stress-findings">
         <div className="stress-finding">
           <div className="stress-finding-n">{inputs.insolvencyGapPct.toFixed(1)}%</div>
           <div className="stress-finding-t">
-            gap at which a max-LTV position first owes more than its collateral is worth. The deployed demo reserve
+            gap at which a max-LTV position first owes more than its collateral is worth. The deployed devnet reserve
             allows {reserve.maxLtvBps / 100}% LTV against a Borrow-Limit Price of {usd2(inputs.positionOpenedAtBorrowLimitUsd)}.
           </div>
         </div>
@@ -147,7 +147,7 @@ export function StressTest() {
           post-gap price. &ldquo;Liquidation can execute after&rdquo; counts the oracle updates after the reopen until
           the health check flags the position (it needs the Liquidation Price to fall to about{" "}
           {usd2(inputs.positionFlaggedLiquidatableOnceLiquidationPriceAtOrBelowUsd)}) and a liquidator can also profit.
-          Updates are counted, not timed, because this build runs no keeper. Every further 1% fall during that delay adds
+          Updates are counted, not timed, because this deployment runs no keeper. Every further 1% fall during that delay adds
           roughly {refGap ? usd0(refGap.extraBadDebtPerFurther1PctFallPer1MDebtUsd) : "$10k"} per $1M of insolvent debt.
         </p>
         <p>
@@ -181,6 +181,9 @@ export function StressTest() {
             liquidator bonus: aggressive for an equity, and a parameter, not a property of the oracle.
           </p>
         )}
+        <p>
+          Reproduce it with <code>npm run replay:stress</code> in the repository.
+        </p>
       </details>
     </div>
   );

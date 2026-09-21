@@ -67,18 +67,18 @@ environment — see "Submission checklist" at the bottom.**
       one with a real finalized devnet signature** (`scripts/replay/replay-output.json`)
 - [x] Comparison (Vigil / frozen-price vault / DEX-only vault / fixed deviation-band oracle),
       computed from that single real dataset (`npm run replay:compare`,
-      rendered at `app/replay`) — never three independently tuned scenarios
+      rendered at `/replay`) — never three independently tuned scenarios
 - [x] All 298 unique replay signatures programmatically verified finalized
       via `getSignatureStatuses` (`npm run replay:verify`, not a spot check)
       — see `scripts/replay/signature-verification.json`
 - [x] Both frontend pages screenshot-verified actually rendering (not just
       "the build passes") — see `screenshots/dashboard-page.png` and
       `screenshots/replay-page-final.png`
-- [x] On-screen disclosure labels: a "Disclosed design choice — Demo mode:
-      market hours set by hand, price refresh uses stored replay data" callout on `/` (the
-      brief's "Branch B"), the "Replaying [date] weekend" badge and a
-      GeckoTerminal-anchor-source callout on `/replay`
-- [x] Live Pyth market-hours row on `/` and `/landing` (Hermes
+- [x] On-screen disclosure: a Devnet status strip on `/` and `/app` (market hours set
+      by hand, prices fed by a mock Pyth program, borrow refreshes the oracle with
+      the stored replay reference price, not audited) and a data-source strip on
+      `/replay` (GeckoTerminal anchors, Pyth Benchmarks requires a key)
+- [x] Live Pyth market-hours row on `/` and `/app` (Hermes
       `price_feeds` metadata for the real AAPL feed — schedule only, not a
       price; the on-chain oracle itself is still mock-fed, see above)
 - [ ] Demo recording + hackathon submission (this repo owner's action —
@@ -204,8 +204,8 @@ Full per-signature output: `scripts/replay/signature-verification.json`.
 
 ### Frontend screenshots (real renders, not a claim the build passes)
 
-- `screenshots/dashboard-page.png` — `/`, showing the demo-mode disclosure
-  callout, live market panel, and deposit/borrow/repay forms.
+- `screenshots/dashboard-page.png` — the dashboard (now at `/app`; earlier
+  captures predate the status strip), showing the devnet disclosure, live market panel, and deposit/borrow/repay forms.
 - `screenshots/replay-page-final.png` — `/replay`, showing the "Replaying
   Sept 11&ndash;14 2026 weekend" badge, the GeckoTerminal-anchor-source
   disclosure, and the real four-series comparison chart rendering
@@ -256,7 +256,7 @@ confirming actual client-side rendering and data fetching, not just that
   feed-id check, owner check) is unchanged either way.
 - `app/` — Next.js frontend: wallet-adapter connect, live dashboard
   reading `RegimeState`/`Reserve`/`Position` on-chain, deposit/borrow/repay
-  forms (`/`), and the real-data weekend replay comparison chart (`/replay`).
+  forms (`/app`), the landing page (`/`), and the real-data weekend replay comparison chart (`/replay`).
 - `scripts/` — devnet seed/demo scripts, plus `scripts/replay/` (the Phase
   3 historical replay harness: `config.ts`, `anchor-price.ts`,
   `fetch-historical-data.ts`, `run-replay.ts`, `build-comparison.ts`).
@@ -410,10 +410,10 @@ own submission platform, none of which this environment has:
       (Steps 1&ndash;5), stating on screen and in the written submission
       notes that **Branch B (Demo Mode — "market hours set by hand, price refresh uses stored replay data" on screen)** ran for Step 1 — not Branch A —
       because this build has no live continuously-running Hermes keeper
-      verifying real NYSE hours at record time (see the on-screen banner
-      on `/` for the exact wording to read aloud or caption). Steps 2&ndash;5
-      should show the `/replay` page with its "Replaying Sept 11&ndash;14
-      2026 weekend" label already visible on screen.
+      verifying real NYSE hours at record time (see the Devnet status strip
+      on `/app` for the exact wording to read aloud or caption). Steps 2&ndash;5
+      should show the `/replay` page with its "Weekend replay" heading and
+      Sept 11&ndash;14, 2026 dates already visible on screen.
 - [ ] **Submit to Stocklana** with the GitHub link, the demo video/live-
       demo link, and the branch statement above, per their submission
       form. This is an external platform action outside this environment.

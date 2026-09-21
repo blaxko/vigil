@@ -93,7 +93,8 @@ export function ComparisonChart() {
   }, []);
 
   if (error) {
-    return <div className="error">Could not load comparison data: {error}. Run `npm run replay:compare` and copy the output into app/public/.</div>;
+    console.error("[vigil] comparison data failed to load", error);
+    return <div className="error">The replay chart couldn&apos;t load. Refresh the page to try again.</div>;
   }
   if (!data) {
     // Same aspect ratio as the chart so the page doesn't jump when data arrives.

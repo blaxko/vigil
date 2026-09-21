@@ -13,17 +13,18 @@ export function DeploymentStatus() {
       <div className="status-bar">
         <span className="status-badge">Devnet</span>
         <p className="status-text">
-          Test tokens with no real value. Market hours are set manually in this deployment.
+          Test tokens with no real value. Market hours are set manually and the oracle is fed by a mock Pyth program
+          in this deployment. Not audited.
         </p>
         <details className="status-details">
           <summary>Details</summary>
           <p>
-            Vigil&apos;s oracle takes market hours as an input. Feeding it automatically needs a
-            continuously-running keeper watching real exchange hours, which is separate infrastructure from the
-            on-chain programs, so the open/closed flag is set by hand here and Pyth&apos;s real market hours are
-            shown beside it. Borrow also triggers an oracle refresh that re-posts a reference price stored on-chain
-            from the Sept 11&ndash;14 replay, not a live one. The pricing math, the position accounting and every
-            transaction are the real deployed programs.
+            Vigil&apos;s oracle takes market hours as an input, and a keeper watching real exchange hours would
+            normally supply it. This deployment has no keeper, so the open/closed flag is set by hand and Pyth&apos;s
+            live schedule is shown beside it. Prices come from a mock Pyth program that writes Pyth&apos;s account
+            layout, and Borrow refreshes the oracle with a reference price stored on-chain from the Sept 11&ndash;14
+            replay, not a live one. The pricing math, the position accounting and every transaction run on the
+            deployed programs.
           </p>
         </details>
       </div>
@@ -127,7 +128,7 @@ export function ProofBand() {
 const JOURNEY = [
   { n: "01", t: "Deposit", d: "Put up tokenized AAPLx as collateral without selling it." },
   { n: "02", t: "Borrow", d: "Draw USDC against it, including on a Saturday." },
-  { n: "03", t: "Hold through the closure", d: "Pricing adapts on its own. Nothing for you to do." },
+  { n: "03", t: "Hold through the closure", d: "Both prices adjust as it goes on, and your position is checked against the wider one." },
   { n: "04", t: "Repay and withdraw", d: "Repay any amount and take your AAPLx back." },
 ];
 
@@ -188,42 +189,9 @@ export function AppShowcase() {
         </div>
 
         <div className="lp-cta-row" style={{ marginTop: 34, marginBottom: 0 }}>
-          <Link href="/" className="btn-gradient">
+          <Link href="/app" className="btn-gradient">
             Open the dashboard
           </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Secondary: context                                                  */
-/* ------------------------------------------------------------------ */
-
-export function ContextSection() {
-  return (
-    <section className="lp-section section-minor band-inset" id="context">
-      <div className="lp-container">
-        <div className="context-grid">
-          <Reveal>
-            <div className="context-item">
-              <b>Built on Solana</b>
-              <p>
-                Tokenized stocks already trade here, and their Token-2022 split multiplier is read on-chain.
-                Continuous pricing means writing state all weekend, which only works with low fees.
-              </p>
-            </div>
-          </Reveal>
-          <Reveal delay={60}>
-            <div className="context-item">
-              <b>An oracle, not just a lending market</b>
-              <p>
-                The regime-aware oracle is its own on-chain program. A lender reads two prices and a regime flag
-                from it; the lending market here is one consumer of it.
-              </p>
-            </div>
-          </Reveal>
         </div>
       </div>
     </section>
@@ -255,23 +223,23 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
-    q: "Why do the two prices keep changing?",
+    q: "How do the two prices update?",
     a: (
       <>
-        There is no keeper running, so the prices only update when something asks them to &mdash; the dashboard
-        refreshes the oracle just before a borrow. Each update moves both prices a bounded fraction of the way
-        toward their targets, so they drift and then settle. For the same reason the on-chain market-hours flag
-        is set by hand and can differ from Pyth&apos;s live reading, which is shown next to it.
+        Each oracle update moves both prices a bounded fraction of the way toward their targets, by at most 3% per
+        update, with the Borrow-Limit Price moving more slowly than the Liquidation Price. Anyone can trigger an
+        update, and this deployment triggers one just before each borrow, so the prices drift and then settle as
+        updates land.
       </>
     ),
   },
   {
-    q: "Does Vigil use real Pyth prices?",
+    q: "How does Vigil use Pyth?",
     a: (
       <>
-        Not yet. The oracle program has the Pyth ingestion and its checks, but on devnet it reads a mock Pyth
-        program, because Pyth&apos;s price endpoints need an API key. Real Pyth data supplies the market-hours
-        reading shown on the dashboard, not the prices.
+        The oracle program is built around Pyth&apos;s price, confidence interval, staleness and feed checks, and live
+        Pyth data supplies market hours on the site. On devnet, price updates come from a mock Pyth program that
+        writes the same account layout, because Pyth&apos;s price endpoints need an API key.
       </>
     ),
   },
@@ -295,15 +263,6 @@ export function DetailsSection() {
             </details>
           ))}
         </div>
-
-        <div className="fineprint">
-          <b>Deployment status</b>
-          <ul>
-            <li>Devnet only. Test tokens, no real value.</li>
-            <li>Not audited.</li>
-            <li>The oracle is fed by a mock Pyth program with stored prices; Pyth supplies market hours, not prices.</li>
-          </ul>
-        </div>
       </div>
     </section>
   );
@@ -322,7 +281,7 @@ export function CtaPair() {
             <h2 className="cta-title">Try it on devnet</h2>
             <p>Connect a wallet, get test AAPLx, and borrow against it.</p>
             <div className="lp-cta-row" style={{ marginBottom: 0 }}>
-              <Link href="/" className="btn-gradient">
+              <Link href="/app" className="btn-gradient">
                 Launch App
               </Link>
               <a href="https://github.com/blaxko/vigil" target="_blank" rel="noreferrer" className="btn-outline">

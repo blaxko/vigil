@@ -1,68 +1,82 @@
 import { ComparisonChart } from "@/components/ComparisonChart";
+import { SiteNav } from "@/components/SiteNav";
 import { StressTest } from "@/components/StressTest";
+import comparison from "@/public/comparison-output.json";
+import { pageMeta } from "@/lib/meta";
+
+export const metadata = pageMeta(
+  "Weekend replay",
+  "One real weekend, Friday close to Monday open (Sept 11 to 14, 2026), replayed through Vigil's deployed programs: 149 on-chain price updates against DEX-only, frozen-price and deviation-band baselines.",
+);
 
 export default function ReplayPage() {
+  // Same convention as the landing hero: leave out the Monday reopen tick, so the
+  // figures below describe the closure itself.
+  const pts = comparison.points.slice(0, -1);
+  const first = pts[0];
+  const last = pts[pts.length - 1];
+  const borrowMove = (last.vigilBorrowLimitUsd / first.vigilBorrowLimitUsd - 1) * 100;
+  const liquidationMove = (last.vigilLiquidationUsd / first.vigilLiquidationUsd - 1) * 100;
+  const usd = (n: number) => "$" + n.toFixed(2);
+
   return (
-    <div className="page">
-      <div className="glow-field">
-        <div className="glow-blob left" />
-        <div className="glow-blob right" />
-      </div>
-      <div className="header" style={{ position: "relative", zIndex: 1 }}>
-        <a href="/landing" className="title">
-          Vigil<span className="title-sub">Weekend Replay</span>
-        </a>
-        <a href="/" className="hdr-link">
-          &larr; Dashboard
-        </a>
-      </div>
-
-      <div style={{ position: "relative", zIndex: 1 }}>
-        <div style={{ marginBottom: 16 }}>
-          <span className="badge open" style={{ fontSize: 13, padding: "6px 14px" }}>
-            Replaying Sept 11&ndash;14 2026 weekend &mdash; real historical data
-          </span>
+    <>
+      <SiteNav />
+      <div className="page">
+        <div className="glow-field">
+          <div className="glow-blob left" />
+          <div className="glow-blob right" />
         </div>
 
-        <div className="panel">
-          <p style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1.5, margin: 0 }}>
-            Every Vigil point below is a real on-chain <code>update_price</code> transaction against
-            Vigil&apos;s deployed devnet programs (149 ticks, 298 real signatures, all confirmed
-            finalized &mdash; see the README), driven by real historical AAPLx/USDC trading data
-            (GeckoTerminal) for the actual Friday-close-to-Monday-open window of Sept 11&ndash;14, 2026.
-            The frozen-price, DEX-only and deviation-band lines are baselines computed from that same
-            real DEX data &mdash; models of how other approaches would have priced the same weekend, not
-            on-chain venues. No data in this replay is invented.
-          </p>
-        </div>
-
-        <div className="panel disclosure">
-          <span className="disclosure-tag">Disclosed design choice</span>
-          <h2 className="disclosure-title">149 real on-chain ticks, anchored to the live AAPLx pool</h2>
-          <p className="disclosure-lead">
-            Every tick is a finalized devnet transaction. The Friday-close and Monday-reopen anchors come
-            from the real AAPLx/USDC DEX pool, because Pyth&apos;s historical Benchmarks API required an
-            API key.
-          </p>
-          <details>
-            <summary>Details</summary>
-            <p>
-              Those anchors are read at the moment of NYSE close/open. Pyth&apos;s Benchmarks and Hermes
-              historical endpoints returned 401 Unauthorized for every timestamp tested at build time (a
-              key gate, not missing data). AAPLx is arbitraged against real AAPL during market hours, so
-              its DEX price tracks Pyth&apos;s equity print closely at the boundary &mdash; a faithful
-              stand-in, not a literal Pyth read. With a key, switching is one line: set{" "}
-              <code>SOURCE = &quot;pyth-benchmarks&quot;</code> in <code>scripts/replay/config.ts</code>.
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div className="page-head">
+            <h1 className="page-title">Weekend replay</h1>
+            <p className="page-sub">
+              One real weekend, Friday close to Monday open, Sept 11&ndash;14, 2026, priced by Vigil and by the
+              alternatives.
             </p>
-          </details>
-        </div>
+          </div>
 
-        <div className="panel">
-          <ComparisonChart />
-        </div>
+          <div className="status-bar replay-status">
+            <span className="status-badge">Data</span>
+            <p className="status-text">
+              Real AAPLx/USDC trading data from GeckoTerminal. The Friday-close and Monday-reopen anchors come from the
+              same DEX pool, because Pyth&apos;s historical API requires a key.
+            </p>
+            <details className="status-details">
+              <summary>Details</summary>
+              <p>
+                Those anchors are read at the moment of NYSE close and open. Pyth&apos;s Benchmarks and Hermes historical
+                endpoints returned 401 Unauthorized for every timestamp tested, a key gate rather than missing data. AAPLx
+                is arbitraged against real AAPL during market hours, so its DEX price tracks Pyth&apos;s equity print
+                closely at the boundary: a close stand-in, not a literal Pyth read. The replay harness can switch its
+                anchor source to Pyth Benchmarks once a key is available.
+              </p>
+            </details>
+          </div>
 
-        <StressTest />
+          <div className="panel">
+            <p className="replay-lede">
+              Over the closed weekend the raw DEX price swung {comparison.dexRawSwingPct.toFixed(1)}%. Vigil&apos;s
+              Borrow-Limit Price tightened {Math.abs(borrowMove).toFixed(1)}% to {usd(last.vigilBorrowLimitUsd)} and its
+              Liquidation Price widened {liquidationMove.toFixed(1)}% to {usd(last.vigilLiquidationUsd)}, so neither one
+              depends on a single thin weekend market.
+            </p>
+            <p className="replay-sub">
+              Every Vigil point is a real <code>update_price</code> transaction on the deployed devnet programs: 149
+              ticks, 298 signatures, all confirmed finalized. The frozen-price, DEX-only and deviation-band lines are
+              baselines computed from the same DEX data, models of how other approaches would have priced the weekend
+              rather than on-chain venues.
+            </p>
+          </div>
+
+          <div className="panel">
+            <ComparisonChart />
+          </div>
+
+          <StressTest />
+        </div>
       </div>
-    </div>
+    </>
   );
 }
