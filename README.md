@@ -411,6 +411,18 @@ authority is now `AfH8S3TU2vFVH6b6Z63vL5pmtK4fX5b3jsakHhjG6HSc`.
   oracle's anchor and the DEX reference stored on-chain from the replay. `mock_pyth`
   fed only the replay's 86 warm-up ticks and its reopen tick.
 
+## Collateral multiplier (Token-2022 scaled UI amount)
+
+The collateral mint carries the scaled-UI-amount extension, and the lending program values collateral as
+base amount × multiplier. The dashboard applies the same multiplier (same rule as the program: the new
+multiplier once its effective timestamp has passed) for the wallet balance, deposited collateral, borrow
+limit, health factor and deposit/withdraw amounts, and sends exact base amounts for "Max". The deployed
+AAPLx mint's multiplier is 1.0, which would have hidden a mistake, so `npm run dev:market` creates an isolated
+devnet market with any multiplier (`-- --multiplier 1.5 --price 300 --borrower-key <path>`) for testing the
+dashboard against it. Against a 1.5× mint: the wallet showed 15.0000 for 10,000,000 base, "Max" deposited exactly
+10,000,000 base, max borrowable matched the chain formula ($4,049.97), Borrow at that limit succeeded on-chain, and
+typing "3" deposited 2,000,000 base.
+
 ## Measured liquidation economics (one real liquidation on devnet)
 
 `npm run experiment:liquidation` builds an isolated devnet market (its own mints, oracle instance and

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { BN } from "@coral-xyz/anchor";
 import type { PublicKey } from "@solana/web3.js";
-import { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+import { getAssociatedTokenAddressSync, getMint, getScaledUiAmountConfig, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
 import { AAPLX_MINT, COLLATERAL_DECIMALS, FEED_ID, USDC_MINT } from "@/lib/constants";
 import { getLendingMarketProgram, getReadOnlyProvider, getRegimeOracleProgram } from "@/lib/anchor";
@@ -51,6 +51,9 @@ export function useVigilState(withLiquidity = false) {
   // so pages that don't show it add no RPC calls.
   const [debtLiquidity, setDebtLiquidity] = useState<number | null>(null);
   const [collateralBalance, setCollateralBalance] = useState<bigint>(BigInt(0));
+  // Token-2022 scaled-UI-amount multiplier of the collateral mint (1.0 when the mint has none). The program
+  // values collateral as base amount x this multiplier, so the UI has to as well.
+  const [collateralMultiplier, setCollateralMultiplier] = useState(1);
   const [readError, setReadError] = useState<string | null>(null);
 
   const configured = Boolean(AAPLX_MINT && USDC_MINT && FEED_ID);
@@ -109,10 +112,34 @@ export function useVigilState(withLiquidity = false) {
   }, [connection, wallet, configured, withLiquidity]);
 
   useEffect(() => {
+    if (!configured) return;
+    let cancelled = false;
+    const loadMultiplier = async () => {
+      try {
+        const mint = await getMint(connection, AAPLX_MINT!, "confirmed", TOKEN_2022_PROGRAM_ID);
+        const cfg = getScaledUiAmountConfig(mint);
+        // Same rule as lending_market's token2022::read_multiplier_fp: the new multiplier applies once its
+        // effective timestamp has passed; with no extension the multiplier is 1.0.
+        const now = Math.floor(Date.now() / 1000);
+        const active = cfg ? (now >= Number(cfg.newMultiplierEffectiveTimestamp) ? cfg.newMultiplier : cfg.multiplier) : 1;
+        if (!cancelled && Number.isFinite(active) && active > 0) setCollateralMultiplier(active);
+      } catch (e) {
+        console.error("vigil: could not read the collateral mint's multiplier", e);
+      }
+    };
+    loadMultiplier();
+    const id = setInterval(loadMultiplier, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [connection, configured]);
+
+  useEffect(() => {
     refresh();
     const id = setInterval(refresh, 5000);
     return () => clearInterval(id);
   }, [refresh]);
 
-  return { configured, regimeState, position, reserve, debtLiquidity, collateralBalance, readError, refresh };
+  return { configured, regimeState, position, reserve, debtLiquidity, collateralBalance, collateralMultiplier, readError, refresh };
 }

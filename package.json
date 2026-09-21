@@ -14,7 +14,8 @@
     "oracle:refresh": "ts-node --project tsconfig.json scripts/refresh-oracle.ts",
     "refill:vault": "ts-node --project tsconfig.json scripts/refill-debt-vault.ts",
     "verify:real-pyth": "ts-node --project tsconfig.json scripts/verify-real-pyth.ts",
-    "experiment:liquidation": "ts-node --project tsconfig.json scripts/liquidation-experiment.ts"
+    "experiment:liquidation": "ts-node --project tsconfig.json scripts/liquidation-experiment.ts",
+    "dev:market": "ts-node --project tsconfig.json scripts/dev-market.ts"
   },
   "devDependencies": {
     "@coral-xyz/anchor": "^0.32.1",

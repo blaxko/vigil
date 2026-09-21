@@ -108,7 +108,11 @@ export function Dashboard() {
   const { connection } = useConnection();
   const wallet = useWallet();
   const { setVisible: openWalletModal } = useWalletModal();
-  const { configured, regimeState, position, reserve, debtLiquidity, collateralBalance, readError, refresh } = useVigilState(true);
+  const { configured, regimeState, position, reserve, debtLiquidity, collateralBalance, collateralMultiplier, readError, refresh } =
+    useVigilState(true);
+  // Collateral is stored in token base units; what a wallet shows, and what the program values, is base x multiplier.
+  const baseToUi = (base: number | bigint) => (Number(base) / 10 ** COLLATERAL_DECIMALS) * collateralMultiplier;
+  const uiToBase = (ui: number) => new BN(Math.round((ui / collateralMultiplier) * 10 ** COLLATERAL_DECIMALS));
 
   const [depositAmount, setDepositAmount] = useState("");
   const [borrowAmount, setBorrowAmount] = useState("");
@@ -157,7 +161,8 @@ export function Dashboard() {
       const position = positionPda(reserveAddr, wallet.publicKey);
       const collateralVault = collateralVaultPda(reserveAddr);
       const ata = getAssociatedTokenAddressSync(AAPLX_MINT!, wallet.publicKey, false, TOKEN_2022_PROGRAM_ID);
-      const amountBase = new BN(Math.round(amount * 10 ** COLLATERAL_DECIMALS));
+      // "Max" deposits the exact base balance, not a number rounded through the multiplier.
+      const amountBase = Math.abs(amount - walletUi) < 1e-9 ? new BN(collateralBalance.toString()) : uiToBase(amount);
 
       const tx = await program.methods
         .deposit(amountBase)
@@ -292,7 +297,7 @@ export function Dashboard() {
       const ata = getAssociatedTokenAddressSync(AAPLX_MINT!, wallet.publicKey, false, TOKEN_2022_PROGRAM_ID);
       // Withdrawing everything uses the exact on-chain base amount, not a rounded UI number.
       const amountBase =
-        Math.abs(amount - collateralUi) < 1e-9 ? position.collateralBase : new BN(Math.round(amount * 10 ** COLLATERAL_DECIMALS));
+        Math.abs(amount - collateralUi) < 1e-9 ? position.collateralBase : uiToBase(amount);
 
       const tx = await program.methods
         .withdraw(amountBase)
@@ -313,11 +318,11 @@ export function Dashboard() {
 
   const maxBorrowable =
     regimeState && position && reserve
-      ? (Number(position.collateralBase) / 10 ** COLLATERAL_DECIMALS) * (Number(regimeState.borrowLimitPrice) / PRICE_SCALE) * (reserve.maxLtvBps / 10_000)
+      ? baseToUi(position.collateralBase.toString()) * (Number(regimeState.borrowLimitPrice) / PRICE_SCALE) * (reserve.maxLtvBps / 10_000)
       : null;
 
-  const walletUi = Number(collateralBalance) / 10 ** COLLATERAL_DECIMALS;
-  const collateralUi = position ? Number(position.collateralBase) / 10 ** COLLATERAL_DECIMALS : 0;
+  const walletUi = baseToUi(collateralBalance);
+  const collateralUi = position ? baseToUi(position.collateralBase.toString()) : 0;
   const debtUsd = position ? Number(position.debtAmount) / 10 ** 6 : 0;
   const availableToBorrow = maxBorrowable !== null ? Math.max(0, maxBorrowable - debtUsd) : null;
   const hasPosition = collateralUi > 0 || debtUsd > 0;
@@ -492,7 +497,7 @@ export function Dashboard() {
                     <span>Deposited / borrowed</span>
                     <b>
                       {reserve
-                        ? `${(Number(reserve.totalCollateralBase) / 10 ** COLLATERAL_DECIMALS).toFixed(2)} AAPLx / $${(Number(reserve.totalDebt) / 10 ** 6).toFixed(2)}`
+                        ? `${baseToUi(reserve.totalCollateralBase.toString()).toFixed(2)} AAPLx / $${(Number(reserve.totalDebt) / 10 ** 6).toFixed(2)}`
                         : "—"}
                     </b>
                   </div>
