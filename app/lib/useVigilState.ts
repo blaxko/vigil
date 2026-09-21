@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { BN } from "@coral-xyz/anchor";
 import type { PublicKey } from "@solana/web3.js";
@@ -33,6 +33,9 @@ export type Reserve = {
   totalDebt: BN;
 };
 
+const POLL_MS = 5000;
+const FAILURES_BEFORE_ERROR = 3; // about 15 seconds of the endpoint being genuinely unreachable
+
 /**
  * The single source of truth for reading Vigil's real on-chain state --
  * used by both the dashboard (/app) and the landing page's live hero
@@ -55,6 +58,9 @@ export function useVigilState(withLiquidity = false) {
   // values collateral as base amount x this multiplier, so the UI has to as well.
   const [collateralMultiplier, setCollateralMultiplier] = useState(1);
   const [readError, setReadError] = useState<string | null>(null);
+  // A single failed poll (a rate-limited or dropped RPC request) is normal; the last good data stays on screen and
+  // the error only surfaces once several polls in a row have failed.
+  const consecutiveFailures = useRef(0);
 
   const configured = Boolean(AAPLX_MINT && USDC_MINT && FEED_ID);
 
@@ -103,11 +109,13 @@ export function useVigilState(withLiquidity = false) {
         const bal = await connection.getTokenAccountBalance(ata).catch(() => null);
         setCollateralBalance(bal ? BigInt(bal.value.amount) : BigInt(0));
       }
+      consecutiveFailures.current = 0;
       setReadError(null);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("vigil state refresh failed", e);
-      setReadError(msg);
+      consecutiveFailures.current += 1;
+      if (consecutiveFailures.current >= FAILURES_BEFORE_ERROR) setReadError(msg);
     }
   }, [connection, wallet, configured, withLiquidity]);
 
@@ -137,8 +145,18 @@ export function useVigilState(withLiquidity = false) {
 
   useEffect(() => {
     refresh();
-    const id = setInterval(refresh, 5000);
-    return () => clearInterval(id);
+    // Poll only while the tab is visible: a background tab has no reader, and every poll is an RPC request.
+    const id = setInterval(() => {
+      if (!document.hidden) refresh();
+    }, POLL_MS);
+    const onVisible = () => {
+      if (!document.hidden) refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [refresh]);
 
   return { configured, regimeState, position, reserve, debtLiquidity, collateralBalance, collateralMultiplier, readError, refresh };
