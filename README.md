@@ -128,6 +128,25 @@ Anchor 1.0+ defaults `anchor test` to Surfpool instead of the legacy
 | bash` if `surfpool --version` doesn't resolve (`anchor test --validator
 legacy` is the fallback if you'd rather not add it).
 
+## RPC endpoint
+
+The app reads chain state through `NEXT_PUBLIC_RPC_ENDPOINT` (default: the public `https://api.devnet.solana.com`). The
+public endpoint rate-limits: a few open tabs polling every 5 seconds are enough to get `429 Connection rate limits exceeded`.
+For a deployment other people will use, point it at a dedicated devnet endpoint and rebuild (`NEXT_PUBLIC_*` values are
+compiled into the client bundle, so changing the variable needs a new build).
+
+Because that value ends up in public JavaScript, use an endpoint that only reaches devnet, restrict the key to your site's
+domain in the provider's dashboard, and keep its quota low. Before switching, check it:
+
+```
+npx ts-node --project tsconfig.json scripts/check-rpc.ts <https RPC url>
+```
+
+The check confirms the endpoint is devnet (genesis hash), survives a burst and about ten requests a second for ten seconds, and
+supports the websocket that transaction confirmation uses. The public endpoint fails the load checks. The faucet and oracle-refresh
+routes read the same variable, so they use the dedicated endpoint too. The app also pauses polling in hidden tabs and only shows a
+load error after three consecutive failed polls.
+
 ## Devnet deployment / seeding / demo
 
 ```
