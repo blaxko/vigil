@@ -1,0 +1,63 @@
+{
+  "network": "devnet",
+  "isolatedMarket": true,
+  "params": {
+    "MAX_LTV_BPS": 9000,
+    "LIQ_THRESHOLD_BPS": 9200,
+    "LIQ_BONUS_BPS": 500
+  },
+  "signatures": {
+    "initOracle": "5n5uRA1MovnXszPAiVoQNcvvL6LxiJ5AmiNykoAtPn3WUmEnyZcozqR7niJ2WjfXm4y8cw6jJxbQCZFbLWDsQrPt",
+    "initReserve": "5wY665BfBQwJaWGCTbEgaW6KA6ixr7c5PuFP7MaQt5NuE7XLVunQJTTurNXtuDQYbffxxxZaSWw6KW6hEt5YUMda",
+    "deposit": "2wMqKCST7tJ1tMSWDw11boQVoqFzE2zwu1bXuwY9fE5sk83cQkqFEvypWAUEhGKFtKPzZqydpgbH3WV1uL9qXkxS",
+    "borrow": "2Pu7XERbAepyDnsgSPK8TmzTQQMTJz26g6Y7VcdYywbA8aswcTUfHC42cpyukAjNHPnbEAhdRfqi86coQ5fXEyo",
+    "liquidate": "2o5kkshuvjJLD6UGURUvZde49HcTdk5czH4sLAPqyiqvQ3EUjGyKxACdqbTg6sfP3HvhRzm3eo5HRN6jsVWJofBD"
+  },
+  "collateralMint": "BaiPP17WSzq5ciw7qPrTth4bLU6UHarr7msP9faLoTg4",
+  "debtMint": "6eHvBFtfQNVU2jVg5n6CmyGCRYBqyXdVRybmLNvjjeEP",
+  "reserve": "8gDcM2we3XTw4pxKXZJHoxdEqmx57zoASS3S1Xey6aVL",
+  "regimeState": "6hndgNH3qpuMJZZSgo3xUiah5MpypY2Wf9SuMqsQkPwj",
+  "ticks": [
+    {
+      "tick": 1,
+      "liquidationPrice": 370.995125,
+      "borrowLimit": 370.995125,
+      "liquidatable": false
+    },
+    {
+      "tick": 2,
+      "liquidationPrice": 369.092869,
+      "borrowLimit": 369.092869,
+      "liquidatable": false
+    },
+    {
+      "tick": 3,
+      "liquidationPrice": 367.285726,
+      "borrowLimit": 367.285726,
+      "liquidatable": false
+    },
+    {
+      "tick": 4,
+      "liquidationPrice": 365.56894,
+      "borrowLimit": 365.56894,
+      "liquidatable": false
+    },
+    {
+      "tick": 5,
+      "liquidationPrice": 363.937993,
+      "borrowLimit": 363.937993,
+      "liquidatable": true
+    }
+  ],
+  "borrowerDebtUsd": 335.68775,
+  "positionCollateralBeforeAapl": 1,
+  "marketPriceUsd": 333,
+  "liquidationPriceAtLiquidationUsd": 363.937993,
+  "liquidatorPaidUsdc": 335.68775,
+  "liquidatorReceivedAaplx": 0.968495,
+  "liquidatorReceivedValueAtMarketUsd": 322.508835,
+  "liquidatorProfitUsd": -13.178915000000018,
+  "liquidatorProfitPct": -3.9259445720018133,
+  "breakEvenLiquidationPriceUsd": 350.5263157894737,
+  "explorer": "https://explorer.solana.com/tx/2o5kkshuvjJLD6UGURUvZde49HcTdk5czH4sLAPqyiqvQ3EUjGyKxACdqbTg6sfP3HvhRzm3eo5HRN6jsVWJofBD?cluster=devnet"
+}

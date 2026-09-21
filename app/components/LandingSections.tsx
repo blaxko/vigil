@@ -256,6 +256,24 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
           beyond a position&apos;s collateral is not socialized.
         </p>
         <p>
+          Liquidations can currently cost the liquidator money. Measured on devnet in an isolated market with this
+          reserve&apos;s parameters (90% LTV, 92% threshold, 5% bonus): a max-LTV position opened at a $373 price became
+          liquidatable when the market was $333 and the Liquidation Price, which lags the market, was $363.94.
+          Liquidating it cost the liquidator 3.93%: $335.69 USDC paid for $322.51 of AAPLx (
+          <a
+            href="https://explorer.solana.com/tx/2o5kkshuvjJLD6UGURUvZde49HcTdk5czH4sLAPqyiqvQ3EUjGyKxACdqbTg6sfP3HvhRzm3eo5HRN6jsVWJofBD?cluster=devnet"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-link"
+          >
+            2o5kks&hellip;JofBD
+          </a>
+          ). A liquidation only pays once the Liquidation Price is at or below the market price divided by 0.95 ($350.53
+          in that case), so a liquidator has no reason to act until then. While the market is set to closed, the
+          Liquidation Price stays above the Borrow-Limit Price, so a position borrowed within the limit isn&apos;t
+          liquidatable at all.
+        </p>
+        <p>
           A live keeper, one that posts a live DEX price and sets the market regime from Pyth&apos;s published schedule, is
           the known next step and isn&apos;t built: while that schedule says open, the oracle&apos;s open path needs a real
           Pyth AAPL price account, and Pyth&apos;s AAPL account on devnet was last updated on July 2.

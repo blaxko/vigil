@@ -182,6 +182,23 @@ export function StressTest() {
           </p>
         )}
         <p>
+          <strong>Measured, not modelled: the liquidator&apos;s side.</strong> On devnet, in an isolated market with the deployed
+          reserve&apos;s parameters, a max-LTV borrower at a $373 price was liquidated after the market fell to $333, at the first
+          tick where the position became liquidatable (Liquidation Price $363.94, because it lags). The liquidator paid
+          $335.69 USDC and received 0.968495 AAPLx, worth $322.51 at $333: a loss of 3.93%, read from the finalized
+          transaction&apos;s own balances (
+          <a
+            href="https://explorer.solana.com/tx/2o5kkshuvjJLD6UGURUvZde49HcTdk5czH4sLAPqyiqvQ3EUjGyKxACdqbTg6sfP3HvhRzm3eo5HRN6jsVWJofBD?cluster=devnet"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-link"
+          >
+            2o5kks&hellip;JofBD
+          </a>
+          ). A liquidation pays only once the Liquidation Price is at or below the market price divided by (1 &minus; the
+          5% bonus), $350.53 here, so the delay above is also the period in which a liquidator has no incentive to act.
+        </p>
+        <p>
           Reproduce it with <code>npm run replay:stress</code> in the repository.
         </p>
       </details>

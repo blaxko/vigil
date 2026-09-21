@@ -407,6 +407,31 @@ authority is now `AfH8S3TU2vFVH6b6Z63vL5pmtK4fX5b3jsakHhjG6HSc`.
   oracle's anchor and the DEX reference stored on-chain from the replay. `mock_pyth`
   fed only the replay's 86 warm-up ticks and its reopen tick.
 
+## Measured liquidation economics (one real liquidation on devnet)
+
+`npm run experiment:liquidation` builds an isolated devnet market (its own mints, oracle instance and
+reserve) with the live reserve's parameters (90% max LTV, 92% liquidation threshold, 5% bonus), opens a
+max-LTV position at a $373 price, drops the market price to $333, and executes the real `liquidate`
+instruction at the first tick where the position is liquidatable. Result
+([`scripts/liquidation-experiment.json`](scripts/liquidation-experiment.json)):
+
+| | |
+|---|---|
+| Liquidation Price at the first liquidatable tick (it lags the market) | $363.94 |
+| Market price | $333.00 |
+| Liquidator paid | 335.687750 USDC |
+| Liquidator received | 0.968495 AAPLx (worth $322.51 at $333) |
+| **Liquidator result** | **−$13.18, −3.93%** |
+
+Confirmed from the finalized transaction's own token balances
+(`2o5kkshuvjJLD6UGURUvZde49HcTdk5czH4sLAPqyiqvQ3EUjGyKxACdqbTg6sfP3HvhRzm3eo5HRN6jsVWJofBD`). The program
+seizes collateral at the Liquidation Price less the 5% bonus, so a liquidation only pays once the
+Liquidation Price is at or below market ÷ 0.95 ($350.53 here). Until then a liquidator has no incentive
+to act while the position is under-collateralized. Separately, while the market is set to closed the
+Liquidation Price stays above the Borrow-Limit Price, so a position borrowed within the limit is not
+liquidatable at all. The market in this run is fed by `mock_pyth` in the open path; only the price
+feed differs from the deployed reserve.
+
 ## Real-Pyth ingestion proof
 
 Pyth's AAPL price accounts on devnet were last updated on July 2 and Hermes' price
