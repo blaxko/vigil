@@ -25,7 +25,7 @@ export function HeroLiveStrip() {
     <div className="live-strip">
       <div className="live-strip-head">
         <span className="live-dot" aria-hidden="true" />
-        Live now
+        On-chain now
       </div>
 
       <div className="live-strip-items">

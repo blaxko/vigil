@@ -2579,3 +2579,15 @@ button.max {
     gap: 18px;
   }
 }
+
+.faq-answer p {
+  margin: 0 0 10px;
+}
+.faq-answer p:last-child {
+  margin-bottom: 0;
+}
+
+/* An open FAQ answer shouldn't stretch its closed neighbour in the two-column grid. */
+.faq-list {
+  align-items: start;
+}

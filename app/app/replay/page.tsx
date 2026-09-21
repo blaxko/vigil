@@ -6,7 +6,7 @@ import { pageMeta } from "@/lib/meta";
 
 export const metadata = pageMeta(
   "Weekend replay",
-  "One real weekend, Friday close to Monday open (Sept 11 to 14, 2026), replayed through Vigil's deployed programs: 149 on-chain price updates against DEX-only, frozen-price and deviation-band baselines.",
+  "One real weekend, Friday close to Monday open (Sept 11 to 14, 2026), replayed through Vigil's deployed programs: 63 on-chain price updates through the closure, against DEX-only, frozen-price and deviation-band baselines.",
 );
 
 export default function ReplayPage() {
@@ -63,8 +63,10 @@ export default function ReplayPage() {
               depends on a single thin weekend market.
             </p>
             <p className="replay-sub">
-              Every Vigil point is a real <code>update_price</code> transaction on the deployed devnet programs: 149
-              ticks, 298 signatures, all confirmed finalized. The frozen-price, DEX-only and deviation-band lines are
+              Every Vigil point is a real <code>update_price</code> transaction on the deployed devnet programs. The closure is
+              63 ticks: the closing tick, 61 hourly ticks and the reopen. An earlier 86-tick warm-up walked the seeded
+              $150 price to the real Friday close through the mock Pyth account. All 149 ticks (298 signatures) are
+              confirmed finalized. The frozen-price, DEX-only and deviation-band lines are
               baselines computed from the same DEX data, models of how other approaches would have priced the weekend
               rather than on-chain venues.
             </p>

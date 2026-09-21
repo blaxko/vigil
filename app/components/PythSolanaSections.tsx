@@ -93,9 +93,9 @@ export function PythSection() {
             <div>
               <b>Where it stands</b>
               <p>
-                On devnet the oracle reads a mock Pyth program that writes the same <code>PriceUpdateV2</code> account
-                layout, because Pyth&apos;s price endpoints need an API key. The real-Pyth path has not been run against live
-                accounts.
+                In this deployment the market is set to closed, so no Pyth price account is read. A mock Pyth program, which
+                writes the same <code>PriceUpdateV2</code> layout, fed the replay&apos;s warm-up and reopen ticks, because
+                Pyth&apos;s price endpoints need an API key and its AAPL account on devnet was last updated on July 2.
               </p>
             </div>
             <div>
@@ -135,7 +135,7 @@ export function PythSection() {
 /*   update_price.rs   - permissionless cranker                        */
 /*   regime_oracle     - its own program, RegimeState PDA read by the  */
 /*                       lending market                                */
-/*   replay            - 149 ticks / 298 signatures on devnet          */
+/*   replay            - 63 closure ticks / 126 txs on devnet          */
 /* ------------------------------------------------------------------ */
 
 const SOLANA_CARDS: { tag: string; title: string; body: React.ReactNode }[] = [
@@ -154,8 +154,8 @@ const SOLANA_CARDS: { tag: string; title: string; body: React.ReactNode }[] = [
     title: "Continuous pricing needs cheap writes",
     body: (
       <>
-        Pricing through a closure means writing fresh oracle state again and again across two days. The Sept 11&ndash;14 replay
-        wrote 149 oracle ticks as 298 transactions. What they cost is below.
+        Pricing through a closure means writing fresh oracle state again and again across two days. The Sept 11&ndash;14 closure
+        took 63 oracle ticks, 126 transactions. What they cost is below.
       </>
     ),
   },
@@ -210,26 +210,28 @@ export function SolanaSection() {
 
         <Reveal>
           <div className="cost-strip">
-            <div className="cost-head">What the replay&apos;s 298 writes cost</div>
+            <div className="cost-head">What the closure&apos;s 126 writes cost</div>
             <div className="cost-figures">
               <div className="cost-fig">
                 <span className="cost-label">On Solana</span>
-                <b className="cost-num c-green">$0.20</b>
-                <span className="cost-sub">0.001805 SOL in fees, summed from all 298 replay transactions</span>
+                <b className="cost-num c-green">$0.11</b>
+                <span className="cost-sub">0.000945 SOL in fees, summed from the closure&apos;s 126 transactions</span>
               </div>
               <div className="cost-fig">
                 <span className="cost-label">On Ethereum mainnet, at minimum</span>
-                <b className="cost-num">$1.75</b>
+                <b className="cost-num">$0.74</b>
                 <span className="cost-sub">
-                  the same 298 writes at 26,000 gas each and today&apos;s 0.084 gwei, about 9&times; more
+                  the same 126 writes at 26,000 gas each and 0.084 gwei on Sept 21, about 7&times; more
                 </span>
               </div>
             </div>
             <p className="cost-note">
-              Solana: the fee field of every replay transaction, 5,000 lamports per signature (235 with one signature, 63
-              with two), priced at SOL $112.70. Ethereum: 21,000 gas for any transaction plus a 5,000-gas storage update,
-              before any contract logic or calldata, so a floor, at ETH $2,702. Prices from CoinGecko and gas from a public
-              Ethereum RPC, Sept 21, 2026. Mainnet gas moves with demand; Solana&apos;s base fee is fixed per signature.
+              Solana: the fee field of every transaction from the closing tick through the reopen, 5,000 lamports per
+              signature (63 with one signature, 63 with two), priced at SOL $112.70. Ethereum: 21,000 gas for any transaction
+              plus a 5,000-gas storage update, before any contract logic or calldata, so a floor, at ETH $2,702. The
+              replay&apos;s 86 earlier warm-up ticks (172 transactions, 0.00086 SOL) walked the seeded price up to the Friday
+              close and are not counted. Prices from CoinGecko and gas from a public Ethereum RPC, Sept 21, 2026. Mainnet
+              gas moves with demand; Solana&apos;s base fee is fixed per signature.
             </p>
           </div>
         </Reveal>

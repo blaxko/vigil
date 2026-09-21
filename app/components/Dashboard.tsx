@@ -413,9 +413,10 @@ export function Dashboard() {
                   <p>
                     Vigil&apos;s oracle takes market hours as an input, and a keeper watching real exchange hours would
                     normally supply it. This deployment has no keeper, so the open/closed switch is set by hand and
-                    Pyth&apos;s live schedule is shown beside it. Borrow also refreshes the oracle with a reference
-                    price stored on-chain from the Sept 11&ndash;14 replay, not a live price. The pricing math, position
-                    accounting and every deposit, borrow and repay run on the deployed programs.
+                    Pyth&apos;s live schedule is shown beside it. With the market set to closed, prices come from a DEX
+                    reference stored on-chain from the Sept 11&ndash;14 replay, refreshed by Borrow; no Pyth price account
+                    is read. The USDC you borrow is a mock balance seeded by the deployer, and no interest accrues. The
+                    pricing math, position accounting and every deposit, borrow and repay run on the deployed programs.
                   </p>
                 </details>
               </div>

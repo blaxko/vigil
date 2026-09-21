@@ -13,18 +13,19 @@ export function DeploymentStatus() {
       <div className="status-bar">
         <span className="status-badge">Devnet</span>
         <p className="status-text">
-          Test tokens with no real value. Market hours are set manually and the oracle is fed by a mock Pyth program
-          in this deployment. Not audited.
+          Test tokens with no real value. Market hours are set manually and prices come from a reference stored on-chain
+          from the Sept 11&ndash;14 replay, not a live feed. Not audited.
         </p>
         <details className="status-details">
           <summary>Details</summary>
           <p>
             Vigil&apos;s oracle takes market hours as an input, and a keeper watching real exchange hours would
             normally supply it. This deployment has no keeper, so the open/closed flag is set by hand and Pyth&apos;s
-            live schedule is shown beside it. Prices come from a mock Pyth program that writes Pyth&apos;s account
-            layout, and Borrow refreshes the oracle with a reference price stored on-chain from the Sept 11&ndash;14
-            replay, not a live one. The pricing math, the position accounting and every transaction run on the
-            deployed programs.
+            live schedule is shown beside it. With the market set to closed, prices come from the closed-market path: the
+            oracle blends its last anchor with a DEX reference price stored on-chain from the Sept 11&ndash;14 replay,
+            and Borrow refreshes it. No Pyth price account is read. A mock Pyth program is configured as the trusted
+            receiver and was used only for the replay&apos;s warm-up and reopen ticks. The pricing math, the position
+            accounting and every transaction run on the deployed programs.
           </p>
         </details>
       </div>
@@ -60,7 +61,7 @@ export function MechanismSection() {
                 market upward.
               </p>
               <div className="tag-card-live">
-                <span>Live now</span>
+                <span>On-chain now</span>
                 <LiveNumber kind="borrowLimit" className="c-green" />
               </div>
             </article>
@@ -74,7 +75,7 @@ export function MechanismSection() {
                 unfairly.
               </p>
               <div className="tag-card-live">
-                <span>Live now</span>
+                <span>On-chain now</span>
                 <LiveNumber kind="liquidation" className="c-blue" />
               </div>
             </article>
@@ -237,9 +238,28 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     q: "How does Vigil use Pyth?",
     a: (
       <>
-        The oracle program is built around Pyth&apos;s price, confidence interval, staleness and feed checks, and live
-        Pyth data supplies market hours on the site. On devnet, price updates come from a mock Pyth program that
-        writes the same account layout, because Pyth&apos;s price endpoints need an API key.
+        The oracle program is built around Pyth&apos;s price, confidence interval, staleness, feed and verification
+        checks, and live Pyth data supplies market hours on the site. In this deployment the market is set to closed,
+        so prices come from the stored replay reference and no Pyth price account is read. A mock Pyth program, which
+        writes the same account layout, fed the replay&apos;s warm-up and reopen ticks, because Pyth&apos;s price endpoints
+        need an API key and its AAPL price account on devnet was last updated on July 2.
+      </>
+    ),
+  },
+  {
+    q: "What isn't built yet?",
+    a: (
+      <>
+        <p>
+          Vigil is a borrowing market today. The USDC it lends is a mock balance seeded by the deployer, so there is no
+          lender deposit flow and no interest accrues. A liquidation repays a position&apos;s full debt, and any shortfall
+          beyond a position&apos;s collateral is not socialized.
+        </p>
+        <p>
+          A live keeper, one that posts a live DEX price and sets the market regime from Pyth&apos;s published schedule, is
+          the known next step and isn&apos;t built: while that schedule says open, the oracle&apos;s open path needs a real
+          Pyth AAPL price account, and Pyth&apos;s AAPL account on devnet was last updated on July 2.
+        </p>
       </>
     ),
   },

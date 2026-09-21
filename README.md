@@ -63,7 +63,9 @@ environment — see "Submission checklist" at the bottom.**
       replayed through the live devnet programs: 61 real hourly candles
       from GeckoTerminal's actual AAPLx/USDC pool, each posted as a real
       `post_dex_reference` + `update_price` transaction pair, plus the
-      market-close and reopen-snap transitions — **149 total ticks, every
+      market-close and reopen-snap transitions: a 63-tick closure, preceded by
+      an 86-tick open-market warm-up that walked the seeded $150 price to the
+      Friday close through the mock Pyth account — **149 total ticks, every
       one with a real finalized devnet signature** (`scripts/replay/replay-output.json`)
 - [x] Comparison (Vigil / frozen-price vault / DEX-only vault / fixed deviation-band oracle),
       computed from that single real dataset (`npm run replay:compare`,
@@ -75,12 +77,15 @@ environment — see "Submission checklist" at the bottom.**
       "the build passes") — see `screenshots/dashboard-page.png` and
       `screenshots/replay-page-final.png`
 - [x] On-screen disclosure: a Devnet status strip on `/` and `/app` (market hours set
-      by hand, prices fed by a mock Pyth program, borrow refreshes the oracle with
-      the stored replay reference price, not audited) and a data-source strip on
-      `/replay` (GeckoTerminal anchors, Pyth Benchmarks requires a key)
+      by hand, prices from a DEX reference stored on-chain from the replay and
+      refreshed by Borrow, no Pyth price account read while the market is set to
+      closed, mock USDC liquidity with no interest, not audited) and a
+      data-source strip on `/replay` (GeckoTerminal anchors, Pyth Benchmarks
+      requires a key)
 - [x] Live Pyth market-hours row on `/` and `/app` (Hermes
       `price_feeds` metadata for the real AAPL feed — schedule only, not a
-      price; the on-chain oracle itself is still mock-fed, see above)
+      price; while the market is set to closed the oracle reads no Pyth
+      price account, see below)
 - [ ] Demo recording + hackathon submission (this repo owner's action —
       see "Submission checklist" below)
 
@@ -382,10 +387,20 @@ authority is now `AfH8S3TU2vFVH6b6Z63vL5pmtK4fX5b3jsakHhjG6HSc`.
   above.
 - The debt vault is pre-seeded with mock-USDC liquidity by the deployer,
   standing in for real lender deposits (no lender-deposit flow exists in
-  this MVP; out of scope per the brief).
+  this MVP; out of scope per the brief). No interest accrues on borrows.
+- A liquidation repays a position's full debt and seizes collateral capped at
+  what the position holds; a shortfall beyond that is not socialized.
+- While the market is set to closed (the deployed state), `update_price` reads
+  no Pyth account at all: prices come from the closed-market blend of the
+  oracle's anchor and the DEX reference stored on-chain from the replay. `mock_pyth`
+  fed only the replay's 86 warm-up ticks and its reopen tick.
 
 ## Future work / known limitations
 
+- A live keeper, one that posts a live DEX price and sets the market regime from
+  Pyth's published schedule, is the known next step and isn't built: while that
+  schedule says open, the oracle's open path needs a real Pyth AAPL price account,
+  and Pyth's AAPL account on devnet was last updated on July 2.
 - A live keeper could automatically re-run the replay harness against the
   most recently closed weekend on an ongoing basis, keeping `/replay`
   continuously current instead of fixed to one historical window. This is
