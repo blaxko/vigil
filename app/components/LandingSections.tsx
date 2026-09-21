@@ -171,9 +171,9 @@ export function AppShowcase() {
                 <img
                   src="/img/dashboard-desktop.webp"
                   width={1920}
-                  height={2166}
+                  height={1978}
                   loading="lazy"
-                  alt="The Vigil dashboard with a connected wallet: live market panel, a position of 8 AAPLx deposited with 3 USDC borrowed, and deposit, borrow and repay forms."
+                  alt="The Vigil dashboard with a connected wallet and an open position: 3 AAPLx deposited, $150 borrowed, a health factor of 6.72 with the liquidation trigger and what is still available to borrow, above the deposit, borrow, repay and withdraw forms."
                 />
               </figure>
               <figure className="phone-frame">
@@ -182,7 +182,7 @@ export function AppShowcase() {
                   width={780}
                   height={1520}
                   loading="lazy"
-                  alt="The same dashboard on a phone: position summary and deposit, borrow and repay forms."
+                  alt="The same dashboard on a phone: the position summary with deposited collateral, debt, health factor, liquidation trigger and available-to-borrow."
                 />
               </figure>
             </div>
