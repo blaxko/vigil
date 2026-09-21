@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton, useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { AnchorProvider, BN } from "@coral-xyz/anchor";
@@ -74,6 +74,7 @@ function describeTxError(err: unknown): string {
     return "The oracle price is out of date and the automatic refresh didn't run. The refresh only works while pricing mode is closed. Deposits and repayments still work.";
   if (/BorrowLimitExceeded/.test(msg)) return "Amount exceeds your current borrow limit.";
   if (/WithdrawalExceedsLimit/.test(msg)) return "Withdrawal would leave the position under-collateralized.";
+  if (/InsufficientCollateral/.test(msg)) return "That is more collateral than your position holds.";
   if (/PositionHoldTimeActive/.test(msg)) return "Position is still within its minimum hold time after the last borrow.";
   if (/RepayExceedsDebt/.test(msg)) return "Repay amount exceeds outstanding debt.";
   if (/Simulation failed/i.test(msg)) {
@@ -106,6 +107,15 @@ export function Dashboard() {
   const [depositAmount, setDepositAmount] = useState("");
   const [borrowAmount, setBorrowAmount] = useState("");
   const [repayAmount, setRepayAmount] = useState("");
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+
+  // Whole seconds, ticking, so the post-borrow hold countdown stays current.
+  const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    const id = setInterval(() => setNowSec(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(id);
+  }, []);
+
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorLogs, setErrorLogs] = useState<string[]>([]);
@@ -247,6 +257,49 @@ export function Dashboard() {
       return sendChecked(provider, tx);
     });
 
+  const handleWithdraw = () =>
+    runTx("Withdrawing collateral...", async () => {
+      if (!wallet.publicKey) throw new Error("Connect your wallet first.");
+      const amount = Number(withdrawAmount);
+      if (!amount || amount <= 0) throw new Error("Enter a positive withdraw amount.");
+      if (!position) throw new Error("You have no deposited collateral.");
+
+      // With debt outstanding the program re-checks the borrow limit against a fresh
+      // oracle price, same as Borrow; with no debt it does not read the price.
+      if (debtUsd > 0) {
+        setPending("Refreshing oracle price...");
+        await refreshDemoOracle();
+        setPending("Withdrawing collateral...");
+      }
+
+      const provider = getProvider(connection, wallet);
+      const program = getLendingMarketProgram(provider);
+      const reserveAddr = reservePda(AAPLX_MINT!);
+      const positionAddr = positionPda(reserveAddr, wallet.publicKey);
+      const collateralVault = collateralVaultPda(reserveAddr);
+      const reserveAuthority = reserveAuthorityPda(reserveAddr);
+      const ata = getAssociatedTokenAddressSync(AAPLX_MINT!, wallet.publicKey, false, TOKEN_2022_PROGRAM_ID);
+      // Withdrawing everything uses the exact on-chain base amount, not a rounded UI number.
+      const amountBase =
+        Math.abs(amount - collateralUi) < 1e-9 ? position.collateralBase : new BN(Math.round(amount * 10 ** COLLATERAL_DECIMALS));
+
+      const tx = await program.methods
+        .withdraw(amountBase)
+        .accounts({
+          owner: wallet.publicKey,
+          reserve: reserveAddr,
+          position: positionAddr,
+          regimeState: regimeStatePda(FEED_ID!),
+          collateralMint: AAPLX_MINT!,
+          ownerCollateralAta: ata,
+          collateralVault,
+          reserveAuthority,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .transaction();
+      return sendChecked(provider, tx);
+    });
+
   const maxBorrowable =
     regimeState && position && reserve
       ? (Number(position.collateralBase) / 10 ** COLLATERAL_DECIMALS) * (Number(regimeState.borrowLimitPrice) / PRICE_SCALE) * (reserve.maxLtvBps / 10_000)
@@ -290,6 +343,34 @@ export function Dashboard() {
       : availableToBorrow !== null && n > availableToBorrow + 1e-9
         ? "Above what you can borrow right now (about $" + availableToBorrow.toFixed(2) + ")."
         : null,
+  );
+  // Most collateral that can leave while the remaining collateral still covers the debt at
+  // the Borrow-Limit Price (the same check the program applies). Everything, if debt is zero.
+  const maxWithdrawable =
+    collateralUi <= 0
+      ? 0
+      : debtUsd <= 0
+        ? collateralUi
+        : regimeState && reserve
+          ? Math.max(
+              0,
+              collateralUi - debtUsd / ((Number(regimeState.borrowLimitPrice) / PRICE_SCALE) * (reserve.maxLtvBps / 10_000)),
+            )
+          : null;
+  const holdSecsLeft =
+    position && reserve && Number(position.lastBorrowTs) > 0
+      ? Math.max(0, Number(position.lastBorrowTs) + Number(reserve.minHoldTimeSecs) - nowSec)
+      : 0;
+  const withdrawErr = validate(withdrawAmount, (n) =>
+    collateralUi <= 0
+      ? "You have no deposited collateral."
+      : n > collateralUi + 1e-9
+        ? "More than your deposited collateral (" + collateralUi.toFixed(4) + " AAPLx)."
+        : maxWithdrawable !== null && n > maxWithdrawable + 1e-6
+          ? "That would leave your debt above its borrow limit. Repay first, or withdraw up to " +
+            Math.floor(maxWithdrawable * 10_000) / 10_000 +
+            " AAPLx."
+          : null,
   );
   const repayErr = validate(repayAmount, (n) =>
     debtUsd <= 0
@@ -566,6 +647,48 @@ export function Dashboard() {
                 </div>
                 {repayErr && <div className="field-error" role="alert">{repayErr}</div>}
               </div>
+
+              <div className="panel">
+                <div className="section-title">Withdraw Collateral</div>
+                <div className="gloss">
+                  Take your AAPLx back to your wallet. With debt outstanding you can withdraw only what still covers it at
+                  the Borrow-Limit Price, and withdrawals unlock {reserve ? Number(reserve.minHoldTimeSecs) : 60} seconds after
+                  your last borrow.
+                </div>
+                <div className="form-row">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="any"
+                    placeholder="AAPLx amount"
+                    aria-label="AAPLx amount to withdraw"
+                    aria-invalid={!!withdrawErr}
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="secondary max"
+                    disabled={!wallet.connected || !!pending || !maxWithdrawable}
+                    onClick={() =>
+                      setWithdrawAmount(
+                        debtUsd <= 0 ? String(collateralUi) : String(Math.floor((maxWithdrawable ?? 0) * 10_000) / 10_000),
+                      )
+                    }
+                  >
+                    Max
+                  </button>
+                  <button disabled={!wallet.connected || !!pending || !withdrawAmount || !!withdrawErr} onClick={handleWithdraw}>
+                    Withdraw
+                  </button>
+                </div>
+                {withdrawErr && <div className="field-error" role="alert">{withdrawErr}</div>}
+                {holdSecsLeft > 0 && (
+                  <div className="field-hint">Withdrawals unlock in {holdSecsLeft}s, after the hold that follows a borrow.</div>
+                )}
+              </div>
+
               {pending && (
                 <div className="pending" role="status">
                   <span className="spinner" aria-hidden="true" />

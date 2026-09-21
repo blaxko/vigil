@@ -19,12 +19,14 @@ export type RegimeState = {
 export type Position = {
   collateralBase: BN;
   debtAmount: BN;
+  lastBorrowTs: BN;
 };
 
 export type Reserve = {
   maxLtvBps: number;
   liquidationThresholdBps: number;
   liquidationBonusBps: number;
+  minHoldTimeSecs: BN;
   totalCollateralBase: BN;
   totalDebt: BN;
 };
