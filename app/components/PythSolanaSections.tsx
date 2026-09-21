@@ -1,0 +1,195 @@
+import { Reveal } from "@/components/Reveal";
+
+/* ------------------------------------------------------------------ */
+/* How Vigil uses Pyth                                                 */
+/*                                                                     */
+/* Every claim here is read off programs/regime_oracle:                */
+/*   update_price.rs  - owner / feed id / 60 s age / positive checks,  */
+/*                      price -/+ confidence, closed-market branch     */
+/*   math.rs          - conservative_lower / protective_upper,         */
+/*                      DEX weight cap (60%), ramps, EMA and clamp     */
+/*   pyth_types.rs    - PriceUpdateV2 layout mirror + unit tests       */
+/* ------------------------------------------------------------------ */
+
+const PYTH_CARDS: { tag: string; tone: string; title: string; body: React.ReactNode }[] = [
+  {
+    tag: "Market open",
+    tone: "tag-green",
+    title: "Prices with the confidence interval",
+    body: (
+      <>
+        While the market is open, the oracle reads Pyth&apos;s price and its confidence. The Borrow-Limit Price is price
+        minus confidence and the Liquidation Price is price plus confidence, so both widen when Pyth is less sure.
+      </>
+    ),
+  },
+  {
+    tag: "Every read",
+    tone: "tag-blue",
+    title: "Checked on-chain before it counts",
+    body: (
+      <>
+        The program rejects a Pyth update that is older than 60 seconds, carries the wrong feed ID, is not owned by the
+        configured Pyth receiver program, or has a non-positive price or confidence. The staleness, feed-ID and future-timestamp checks have unit tests.
+      </>
+    ),
+  },
+  {
+    tag: "Market closed",
+    tone: "tag-violet",
+    title: "A frozen print isn't a price",
+    body: (
+      <>
+        While the market is shut, the oracle ignores Pyth&apos;s weekend print. It starts from the last open-market price
+        it took from Pyth, blends in a liquidity-weighted DEX reference capped at 60%, and moves the two prices apart
+        gradually.
+      </>
+    ),
+  },
+  {
+    tag: "Market hours",
+    tone: "tag-green",
+    title: "Pyth's schedule, live on the site",
+    body: (
+      <>
+        Pyth publishes each equity feed&apos;s market schedule. Vigil reads AAPL&apos;s live schedule from Hermes and shows it
+        next to its own pricing mode, on the landing page and the dashboard.
+      </>
+    ),
+  },
+];
+
+export function PythSection() {
+  return (
+    <section className="lp-section section-major" id="pyth">
+      <div className="lp-container">
+        <Reveal>
+          <div className="lp-section-head">
+            <span className="section-kicker">Built on Pyth</span>
+            <h2 className="lp-section-title">Pyth sets the price while the market is open</h2>
+            <p className="lp-section-lead">
+              Vigil&apos;s oracle is built around Pyth&apos;s price, confidence and schedule, and it decides what to do when
+              Pyth&apos;s feed goes quiet.
+            </p>
+          </div>
+        </Reveal>
+
+        <div className="tag-grid two info-grid">
+          {PYTH_CARDS.map((c, i) => (
+            <Reveal key={c.title} delay={i * 60}>
+              <article className="tag-card">
+                <span className={`tag ${c.tone}`}>{c.tag}</span>
+                <h3 className="tag-card-title">{c.title}</h3>
+                <p className="tag-card-body">{c.body}</p>
+              </article>
+            </Reveal>
+          ))}
+        </div>
+
+        <Reveal>
+          <div className="pyth-status">
+            <div>
+              <b>Where it stands</b>
+              <p>
+                On devnet the oracle reads a mock Pyth program that writes the same <code>PriceUpdateV2</code> account
+                layout, because Pyth&apos;s price endpoints need an API key. The real-Pyth path has not been run against live
+                accounts.
+              </p>
+            </div>
+            <div>
+              <b>Before mainnet</b>
+              <p>
+                Point the oracle at Pyth&apos;s receiver program, run a keeper that posts Pyth prices and follows the
+                exchange schedule, and complete an audit.
+              </p>
+            </div>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Why Solana                                                          */
+/*                                                                     */
+/*   token2022.rs      - reads the ScaledUiAmount multiplier on-chain  */
+/*   update_price.rs   - permissionless cranker                        */
+/*   regime_oracle     - its own program, RegimeState PDA read by the  */
+/*                       lending market                                */
+/*   replay            - 149 ticks / 298 signatures on devnet          */
+/* ------------------------------------------------------------------ */
+
+const SOLANA_CARDS: { tag: string; title: string; body: React.ReactNode }[] = [
+  {
+    tag: "The asset",
+    title: "Tokenized stocks already live here",
+    body: (
+      <>
+        AAPLx is a Token-2022 mint with the scaled-UI-amount extension, which adjusts holdings for events such as stock
+        splits. Vigil reads that multiplier on-chain before it values any collateral.
+      </>
+    ),
+  },
+  {
+    tag: "The cadence",
+    title: "Continuous pricing needs cheap writes",
+    body: (
+      <>
+        Pricing through a closure means writing fresh oracle state again and again across two days. The Sept 11&ndash;14 replay
+        wrote 149 oracle ticks as 298 transactions, and Solana&apos;s fees keep that cadence practical.
+      </>
+    ),
+  },
+  {
+    tag: "The crank",
+    title: "Anyone can update the prices",
+    body: (
+      <>
+        <code>update_price</code> is permissionless. Any account can trigger a recompute from inputs the program has already
+        authenticated, so a price update doesn&apos;t wait on one operator.
+      </>
+    ),
+  },
+  {
+    tag: "The oracle",
+    title: "One account, readable by any lender",
+    body: (
+      <>
+        The regime oracle is its own program. One <code>RegimeState</code> account holds both prices and the regime flag,
+        so another Solana lender can read it directly. Vigil&apos;s lending market is one consumer.
+      </>
+    ),
+  },
+];
+
+export function SolanaSection() {
+  return (
+    <section className="lp-section section-major band-inset" id="solana">
+      <div className="lp-container">
+        <Reveal>
+          <div className="lp-section-head">
+            <span className="section-kicker">Why Solana</span>
+            <h2 className="lp-section-title">Built where tokenized stocks trade</h2>
+            <p className="lp-section-lead">
+              A stock that lives on-chain can be collateral on-chain, and an oracle that updates all weekend needs a chain
+              that makes that cheap.
+            </p>
+          </div>
+        </Reveal>
+
+        <div className="tag-grid two info-grid">
+          {SOLANA_CARDS.map((c, i) => (
+            <Reveal key={c.title} delay={i * 60}>
+              <article className="tag-card">
+                <span className="tag tag-blue">{c.tag}</span>
+                <h3 className="tag-card-title">{c.title}</h3>
+                <p className="tag-card-body">{c.body}</p>
+              </article>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}

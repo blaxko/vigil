@@ -1,0 +1,1 @@
+Vigil: a lending market for tokenized stocks on Solana. Two prices that diverge through a market closure.
