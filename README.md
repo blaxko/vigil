@@ -130,7 +130,14 @@ legacy` is the fallback if you'd rather not add it).
 anchor deploy --provider.cluster devnet   # needs a funded ~/.config/solana/id.json
 npm run seed:devnet                        # creates mints, initializes oracle + reserve
 npm run demo:devnet                        # runs the full deposit/borrow/liquidate/repay lifecycle
+npm run refill:vault                       # tops the mock-USDC debt vault back up (--dry-run to just read it)
 ```
+
+The test-token faucet (`/api/faucet`) mints 10 AAPLx per request and is limited to one
+request per wallet per 30 minutes, five per connection per hour and thirty per hour overall,
+because each mint spends the mint authority's devnet SOL and unlimited AAPLx would let one
+caller borrow the market's whole USDC balance. The limits are in-memory (they reset when the
+server restarts).
 
 `seed-devnet.ts` writes `scripts/devnet-config.json` (addresses) and prints
 the `NEXT_PUBLIC_*` lines for `app/.env.local`. `devnet-demo.ts` persists

@@ -2400,8 +2400,8 @@ button.max {
 
 .param-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px 12px;
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid var(--card-border);

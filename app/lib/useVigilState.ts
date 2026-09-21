@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { BN } from "@coral-xyz/anchor";
+import type { PublicKey } from "@solana/web3.js";
 import { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
 import { AAPLX_MINT, COLLATERAL_DECIMALS, FEED_ID, USDC_MINT } from "@/lib/constants";
@@ -23,6 +24,7 @@ export type Position = {
 };
 
 export type Reserve = {
+  debtVault: PublicKey;
   maxLtvBps: number;
   liquidationThresholdBps: number;
   liquidationBonusBps: number;
@@ -38,13 +40,16 @@ export type Reserve = {
  * decode RegimeState/Reserve/Position, not two copies that could drift
  * apart or reintroduce the account-name-casing bug fixed earlier.
  */
-export function useVigilState() {
+export function useVigilState(withLiquidity = false) {
   const { connection } = useConnection();
   const wallet = useWallet();
 
   const [regimeState, setRegimeState] = useState<RegimeState | null>(null);
   const [position, setPosition] = useState<Position | null>(null);
   const [reserve, setReserve] = useState<Reserve | null>(null);
+  // USDC the market can lend right now (the debt vault's balance). Read only when a page asks for it,
+  // so pages that don't show it add no RPC calls.
+  const [debtLiquidity, setDebtLiquidity] = useState<number | null>(null);
   const [collateralBalance, setCollateralBalance] = useState<bigint>(BigInt(0));
   const [readError, setReadError] = useState<string | null>(null);
 
@@ -75,6 +80,10 @@ export function useVigilState() {
       if (reserveAccountInfo) {
         const decoded = lendingProgram.coder.accounts.decode("reserve", reserveAccountInfo.data);
         setReserve(decoded as Reserve);
+        if (withLiquidity) {
+          const vault = await connection.getTokenAccountBalance((decoded as Reserve).debtVault).catch(() => null);
+          if (vault) setDebtLiquidity(vault.value.uiAmount);
+        }
       }
 
       if (wallet.publicKey) {
@@ -97,7 +106,7 @@ export function useVigilState() {
       console.error("vigil state refresh failed", e);
       setReadError(msg);
     }
-  }, [connection, wallet, configured]);
+  }, [connection, wallet, configured, withLiquidity]);
 
   useEffect(() => {
     refresh();
@@ -105,5 +114,5 @@ export function useVigilState() {
     return () => clearInterval(id);
   }, [refresh]);
 
-  return { configured, regimeState, position, reserve, collateralBalance, readError, refresh };
+  return { configured, regimeState, position, reserve, debtLiquidity, collateralBalance, readError, refresh };
 }

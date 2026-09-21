@@ -69,7 +69,13 @@ function describeTxError(err: unknown): string {
   )
     return "Your wallet needs a little devnet SOL for fees and account rent. A first deposit or borrow creates accounts that cost a few thousandths of a SOL. Get some at faucet.solana.com, then try again.";
   if (/AccountNotInitialized/.test(msg)) return "A required token account does not exist yet for this wallet.";
-  if (/0x1\b/.test(msg) || /insufficient funds/i.test(msg)) return "Insufficient token balance.";
+  if (/0x1\b/.test(msg) || /insufficient funds/i.test(msg)) {
+    // Which instruction ran tells us whose balance is short.
+    if (/Instruction: Borrow/.test(msg)) return "The market doesn't have that much USDC available to lend right now.";
+    if (/Instruction: Repay/.test(msg)) return "You don't have enough USDC in your wallet to repay that.";
+    if (/Instruction: Deposit/.test(msg)) return "You don't have enough AAPLx in your wallet to deposit that.";
+    return "Insufficient token balance.";
+  }
   if (/StalePythPrice|StaleOraclePrices/.test(msg))
     return "The oracle price is out of date and the automatic refresh didn't run. The refresh only works while pricing mode is closed. Deposits and repayments still work.";
   if (/BorrowLimitExceeded/.test(msg)) return "Amount exceeds your current borrow limit.";
@@ -102,7 +108,7 @@ export function Dashboard() {
   const { connection } = useConnection();
   const wallet = useWallet();
   const { setVisible: openWalletModal } = useWalletModal();
-  const { configured, regimeState, position, reserve, collateralBalance, readError, refresh } = useVigilState();
+  const { configured, regimeState, position, reserve, debtLiquidity, collateralBalance, readError, refresh } = useVigilState(true);
 
   const [depositAmount, setDepositAmount] = useState("");
   const [borrowAmount, setBorrowAmount] = useState("");
@@ -180,7 +186,12 @@ export function Dashboard() {
       const body = await res.json();
       if (!res.ok) {
         console.error("[vigil] faucet request failed", body);
-        throw new Error("The test-token faucet is unavailable right now. Try again in a moment.");
+        // 4xx responses carry a user-facing reason (cooldown, already funded); anything else is generic.
+        throw new Error(
+          res.status < 500 && typeof body.error === "string"
+            ? body.error
+            : "The test-token faucet is unavailable right now. Try again in a moment.",
+        );
       }
       return body.signature as string;
     });
@@ -342,7 +353,9 @@ export function Dashboard() {
       ? "Deposit collateral first: there is nothing to borrow against yet."
       : availableToBorrow !== null && n > availableToBorrow + 1e-9
         ? "Above what you can borrow right now (about $" + availableToBorrow.toFixed(2) + ")."
-        : null,
+        : debtLiquidity !== null && n > debtLiquidity + 1e-9
+          ? "The market only has $" + debtLiquidity.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " USDC available to lend right now."
+          : null,
   );
   // Most collateral that can leave while the remaining collateral still covers the debt at
   // the Borrow-Limit Price (the same check the program applies). Everything, if debt is zero.
@@ -470,6 +483,10 @@ export function Dashboard() {
                   <div className="param">
                     <span>Liquidator bonus</span>
                     <b>{reserve ? pct(reserve.liquidationBonusBps) : "—"}</b>
+                  </div>
+                  <div className="param">
+                    <span>USDC available to borrow</span>
+                    <b>{debtLiquidity !== null ? "$" + debtLiquidity.toLocaleString("en-US", { maximumFractionDigits: 0 }) : "—"}</b>
                   </div>
                   <div className="param">
                     <span>Deposited / borrowed</span>
