@@ -41,7 +41,7 @@ environment — see "Submission checklist" at the bottom.**
       scaled-ui-amount conversion with unit tests, LTV/health-factor math
       with unit tests, `initialize_reserve`/`deposit`/`withdraw`/`borrow`/
       `repay`/`liquidate`
-- [x] `cargo test --workspace` — **27/27 passing** (17 regime_oracle, 10
+- [x] `cargo test --workspace` — **29/29 passing** (19 regime_oracle, 10
       lending_market)
 - [x] `anchor build` — all three programs compile to real Solana BPF
       bytecode
@@ -253,7 +253,7 @@ confirming actual client-side rendering and data fetching, not just that
   here), so local tests, the devnet demo, and the replay harness all
   configure the oracle to trust this program's accounts instead of Pyth's
   real Receiver program. The on-chain verification logic (staleness bound,
-  feed-id check, owner check) is unchanged either way.
+  feed-id check, owner check, fully-verified check) is unchanged either way.
 - `app/` — Next.js frontend: wallet-adapter connect, live dashboard
   reading `RegimeState`/`Reserve`/`Position` on-chain, deposit/borrow/repay
   forms (`/app`), the landing page (`/`), and the real-data weekend replay comparison chart (`/replay`).

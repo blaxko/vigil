@@ -23,4 +23,8 @@ pub enum RegimeError {
     Overflow,
     #[msg("Price input must be greater than zero")]
     NonPositivePrice,
+
+    // Appended last so existing error codes do not shift.
+    #[msg("Pyth price update is not fully verified")]
+    PriceNotFullyVerified,
 }

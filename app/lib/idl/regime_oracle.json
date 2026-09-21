@@ -363,6 +363,11 @@
       "code": 6008,
       "name": "NonPositivePrice",
       "msg": "Price input must be greater than zero"
+    },
+    {
+      "code": 6009,
+      "name": "PriceNotFullyVerified",
+      "msg": "Pyth price update is not fully verified"
     }
   ],
   "types": [

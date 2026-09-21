@@ -57,7 +57,7 @@ pub struct Price {
 }
 
 impl PriceUpdateV2 {
-    /// Staleness-bounded, feed-id-checked price read. Never read
+    /// Staleness-bounded, feed-id-checked, fully-verified price read. Never read
     /// `price_message` fields directly elsewhere in the program -- always
     /// go through this so the staleness bound and feed id are enforced at
     /// a single point.
@@ -68,6 +68,10 @@ impl PriceUpdateV2 {
         feed_id: &[u8; 32],
     ) -> Result<Price> {
         require!(&self.price_message.feed_id == feed_id, RegimeError::WrongPriceFeed);
+        // A partially-verified update carries fewer Wormhole guardian signatures than the
+        // quorum, so its price has not been attested. Only Full is accepted, matching
+        // Pyth's own default for price reads.
+        require!(self.verification_level == VerificationLevel::Full, RegimeError::PriceNotFullyVerified);
 
         let age = clock
             .unix_timestamp
@@ -141,6 +145,24 @@ mod tests {
         let update = sample(1_000, feed);
         let clock = clock_at(1_010);
         assert!(update.get_price_no_older_than(&clock, 60, &other_feed).is_err());
+    }
+
+    #[test]
+    fn rejects_partially_verified_update() {
+        let feed = [7u8; 32];
+        let mut update = sample(1_000, feed);
+        update.verification_level = VerificationLevel::Partial { num_signatures: 3 };
+        let clock = clock_at(1_010);
+        assert!(update.get_price_no_older_than(&clock, 60, &feed).is_err());
+    }
+
+    #[test]
+    fn accepts_fully_verified_update() {
+        let feed = [7u8; 32];
+        let mut update = sample(1_000, feed);
+        update.verification_level = VerificationLevel::Full;
+        let clock = clock_at(1_010);
+        assert!(update.get_price_no_older_than(&clock, 60, &feed).is_ok());
     }
 
     #[test]
