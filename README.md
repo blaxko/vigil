@@ -396,7 +396,11 @@ authority is now `AfH8S3TU2vFVH6b6Z63vL5pmtK4fX5b3jsakHhjG6HSc`.
 ## Devnet-only simplifications (disclosed, not hidden)
 
 - `mock_pyth` stands in for Pyth's real Solana Receiver program — see
-  above.
+  above. Its `set_price` only accepts the writer that created a price account (an
+  unauthorised write fails with `UnauthorizedWriter`); before that check, anyone could overwrite a
+  price account the oracle trusts as a "Pyth" input. Deployed to devnet as an upgrade
+  (`3NwSmYHx18CmLQc4Qw9Zu99KxjJj6TJa4dpct6fZtGvH7ktu5DwHkSXpcZK7ffMkUc4pLwdLXrmV2XRHDfAVZXgV`, code hash
+  `bb116ced…`); a different writer is rejected and the original writer still works on devnet.
 - The debt vault is pre-seeded with mock-USDC liquidity by the deployer,
   standing in for real lender deposits (no lender-deposit flow exists in
   this MVP; out of scope per the brief). No interest accrues on borrows.

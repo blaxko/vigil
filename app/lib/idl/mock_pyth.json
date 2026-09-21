@@ -101,6 +101,13 @@
       ]
     }
   ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "UnauthorizedWriter",
+      "msg": "Only the price account's write authority can update it"
+    }
+  ],
   "types": [
     {
       "name": "PriceFeedMessage",

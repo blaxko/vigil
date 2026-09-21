@@ -63,6 +63,12 @@ pub struct SetPrice<'info> {
     pub system_program: Program<'info, System>,
 }
 
+#[error_code]
+pub enum MockPythError {
+    #[msg("Only the price account's write authority can update it")]
+    UnauthorizedWriter,
+}
+
 #[program]
 pub mod mock_pyth {
     use super::*;
@@ -77,6 +83,12 @@ pub mod mock_pyth {
     ) -> Result<()> {
         let clock = Clock::get()?;
         let account = &mut ctx.accounts.price_update;
+        // A price account created by an earlier call can only be updated by whoever created it. A freshly
+        // initialised account has no authority yet (all zeroes), so its first writer becomes the authority.
+        // Without this, anyone could overwrite a price account that regime_oracle trusts as a "Pyth" input.
+        if account.write_authority != Pubkey::default() {
+            require_keys_eq!(account.write_authority, ctx.accounts.payer.key(), MockPythError::UnauthorizedWriter);
+        }
         account.write_authority = ctx.accounts.payer.key();
         account.verification_level = VerificationLevel::Full;
         account.price_message = PriceFeedMessage {
