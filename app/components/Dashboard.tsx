@@ -104,12 +104,16 @@ async function refreshDemoOracle(): Promise<void> {
   }
 }
 
+const LOW_SOL_THRESHOLD = 0.01;
+
 export function Dashboard() {
   const { connection } = useConnection();
   const wallet = useWallet();
   const { setVisible: openWalletModal } = useWalletModal();
-  const { configured, regimeState, position, reserve, debtLiquidity, collateralBalance, collateralMultiplier, readError, refresh } =
+  const { configured, regimeState, position, reserve, debtLiquidity, collateralBalance, collateralMultiplier, solBalance, readError, refresh } =
     useVigilState(true);
+  // A first deposit or borrow creates accounts (position, token accounts) that cost a few thousandths of a SOL in rent, plus fees.
+  const lowSol = solBalance !== null && solBalance < LOW_SOL_THRESHOLD;
   // Collateral is stored in token base units; what a wallet shows, and what the program values, is base x multiplier.
   const baseToUi = (base: number | bigint) => (Number(base) / 10 ** COLLATERAL_DECIMALS) * collateralMultiplier;
   const uiToBase = (ui: number) => new BN(Math.round((ui / collateralMultiplier) * 10 ** COLLATERAL_DECIMALS));
@@ -515,15 +519,28 @@ export function Dashboard() {
                     <button type="button" className="empty-cta" onClick={() => openWalletModal(true)}>
                       Connect wallet
                     </button>
-                    <details className="empty-help">
-                      <summary>Setting up a devnet wallet</summary>
-                      <p>
-                        Switch your wallet to devnet (Phantom: Settings &rarr; Developer Settings &rarr; Testnet Mode;
-                        Solflare: Settings &rarr; Network &rarr; Devnet) and keep a little devnet SOL for fees from{" "}
-                        <a href="https://faucet.solana.com" target="_blank" rel="noreferrer">faucet.solana.com</a>.
-                        &ldquo;Get Test AAPLx&rdquo; mints the test token only, not SOL.
-                      </p>
-                    </details>
+                    <ol className="setup-steps">
+                      <li>
+                        Switch your wallet to <strong>devnet</strong> (Phantom: Settings &rarr; Developer Settings &rarr; Testnet
+                        Mode; Solflare: Settings &rarr; Network &rarr; Devnet).
+                      </li>
+                      <li>
+                        Get a little <strong>devnet SOL</strong> for fees and account rent from{" "}
+                        <a href="https://faucet.solana.com" target="_blank" rel="noreferrer">faucet.solana.com</a>. The
+                        &ldquo;Get Test AAPLx&rdquo; button mints the test token only, not SOL.
+                      </li>
+                      <li>
+                        Connect, press <strong>Get Test AAPLx</strong>, then deposit it below.
+                      </li>
+                    </ol>
+                  </div>
+                )}
+                {wallet.connected && lowSol && (
+                  <div className="notice-inline" role="status">
+                    Your wallet has {solBalance !== null ? solBalance.toFixed(4) : "0"} devnet SOL. A first deposit or borrow
+                    creates accounts that cost a few thousandths of a SOL, so get some at{" "}
+                    <a href="https://faucet.solana.com" target="_blank" rel="noreferrer">faucet.solana.com</a> first. &ldquo;Get
+                    Test AAPLx&rdquo; mints the test token only, not SOL.
                   </div>
                 )}
                 {wallet.connected && !hasPosition && (

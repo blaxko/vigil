@@ -2429,23 +2429,31 @@ button.max {
   font-size: 13px;
   padding: 8px 14px;
 }
-.empty-help {
-  margin-top: 10px;
-  font-size: 12px;
-}
-.empty-help summary {
-  cursor: pointer;
-  color: var(--muted);
-}
-.empty-help summary:hover {
-  color: var(--text);
-}
-.empty-help p {
-  margin: 8px 0 0;
+.setup-steps {
+  margin: 12px 0 0;
+  padding: 0 0 0 18px;
+  font-size: 13px;
   line-height: 1.6;
 }
-.empty-help a {
+.setup-steps li {
+  margin: 0 0 6px;
+}
+.setup-steps li:last-child {
+  margin-bottom: 0;
+}
+.setup-steps a,
+.notice-inline a {
   color: var(--blue);
+}
+.notice-inline {
+  margin: 6px 0 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(224, 169, 41, 0.45);
+  border-radius: 10px;
+  background: rgba(224, 169, 41, 0.08);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.55;
 }
 .form-hint {
   margin: -6px 2px 12px;

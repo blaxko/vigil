@@ -54,6 +54,8 @@ export function useVigilState(withLiquidity = false) {
   // so pages that don't show it add no RPC calls.
   const [debtLiquidity, setDebtLiquidity] = useState<number | null>(null);
   const [collateralBalance, setCollateralBalance] = useState<bigint>(BigInt(0));
+  // The connected wallet's SOL, so the dashboard can warn before a first deposit fails for lack of fees and rent.
+  const [solBalance, setSolBalance] = useState<number | null>(null);
   // Token-2022 scaled-UI-amount multiplier of the collateral mint (1.0 when the mint has none). The program
   // values collateral as base amount x this multiplier, so the UI has to as well.
   const [collateralMultiplier, setCollateralMultiplier] = useState(1);
@@ -108,6 +110,11 @@ export function useVigilState(withLiquidity = false) {
         const ata = getAssociatedTokenAddressSync(AAPLX_MINT!, wallet.publicKey, false, TOKEN_2022_PROGRAM_ID);
         const bal = await connection.getTokenAccountBalance(ata).catch(() => null);
         setCollateralBalance(bal ? BigInt(bal.value.amount) : BigInt(0));
+
+        const lamports = await connection.getBalance(wallet.publicKey).catch(() => null);
+        if (lamports !== null) setSolBalance(lamports / 1e9);
+      } else {
+        setSolBalance(null);
       }
       consecutiveFailures.current = 0;
       setReadError(null);
@@ -159,5 +166,5 @@ export function useVigilState(withLiquidity = false) {
     };
   }, [refresh]);
 
-  return { configured, regimeState, position, reserve, debtLiquidity, collateralBalance, collateralMultiplier, readError, refresh };
+  return { configured, regimeState, position, reserve, debtLiquidity, collateralBalance, collateralMultiplier, solBalance, readError, refresh };
 }
