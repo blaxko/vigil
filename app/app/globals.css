@@ -2478,7 +2478,7 @@ button.max {
   max-width: 880px;
   margin: 24px auto 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
   padding: 18px 22px;
   border: 1px solid var(--card-border);
@@ -2510,4 +2510,72 @@ button.max {
 .lp-section-title,
 .page-title {
   text-wrap: balance;
+}
+
+/* The concrete moment, directly under the hero subhead */
+.lp-moment {
+  max-width: 600px;
+  margin: -12px auto 30px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text);
+  opacity: 0.86;
+}
+
+/* Why Solana: measured fee comparison */
+.cost-strip {
+  max-width: 880px;
+  margin: 24px auto 0;
+  padding: 22px 24px;
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  background: var(--card-bg);
+}
+.cost-head {
+  margin-bottom: 14px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.cost-figures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.cost-fig {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cost-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.cost-num {
+  font-size: clamp(30px, 6vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.cost-sub {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.cost-note {
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--card-border);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+@media (max-width: 700px) {
+  .cost-figures {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
 }

@@ -32,6 +32,11 @@ export default function LandingPage() {
               <p className="lp-subhead">
                 A lending market for tokenized stocks on Solana, priced by an oracle that knows when the market is shut.
               </p>
+              <p className="lp-moment">
+                It&apos;s Saturday, the stock market is shut, and you need USDC now without selling your AAPLx. Vigil sizes the
+                loan on a price that has already tightened, and the liquidation price is wider and smoothed, so one thin
+                weekend trade can&apos;t swing it.
+              </p>
               <div className="lp-cta-row">
                 <Link href="/app" className="btn-gradient">
                   Launch App

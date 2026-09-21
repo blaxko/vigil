@@ -5,6 +5,7 @@ import { Reveal } from "@/components/Reveal";
 /*                                                                     */
 /* Every claim here is read off programs/regime_oracle:                */
 /*   update_price.rs  - owner / feed id / 60 s age / positive checks,  */
+/*   pyth_types.rs    - fully-verified check (VerificationLevel::Full) */
 /*                      price -/+ confidence, closed-market branch     */
 /*   math.rs          - conservative_lower / protective_upper,         */
 /*                      DEX weight cap (60%), ramps, EMA and clamp     */
@@ -30,7 +31,8 @@ const PYTH_CARDS: { tag: string; tone: string; title: string; body: React.ReactN
     body: (
       <>
         The program rejects a Pyth update that is older than 60 seconds, carries the wrong feed ID, is not owned by the
-        configured Pyth receiver program, or has a non-positive price or confidence. The staleness, feed-ID and future-timestamp checks have unit tests.
+        configured Pyth receiver program, is not fully verified, or has a non-positive price or confidence. The
+        staleness, feed-ID, verification and future-timestamp checks have unit tests.
       </>
     ),
   },
@@ -97,6 +99,22 @@ export function PythSection() {
               </p>
             </div>
             <div>
+              <b>Keeper today</b>
+              <p>
+                The refresh route in this repo already does a keeper&apos;s closed-market job: before a borrow it cranks{" "}
+                <code>update_price</code> with a funded key, only when the oracle is over 60 seconds old. One real refresh:{" "}
+                <a
+                  href="https://explorer.solana.com/tx/2eQW3oVeX7xzptsS9DphMtxJo4XSFUnrxvJ5iwfzFKVTNrghmepkvh6btkXrcqj957816RNcea1R5FqtVfHWytyP?cluster=devnet"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-link"
+                >
+                  2eQW3o&hellip;WytyP
+                </a>
+                . It re-posts the stored reference price, so it is not a live feed.
+              </p>
+            </div>
+            <div>
               <b>Before mainnet</b>
               <p>
                 Point the oracle at Pyth&apos;s receiver program, run a keeper that posts Pyth prices and follows the
@@ -137,7 +155,7 @@ const SOLANA_CARDS: { tag: string; title: string; body: React.ReactNode }[] = [
     body: (
       <>
         Pricing through a closure means writing fresh oracle state again and again across two days. The Sept 11&ndash;14 replay
-        wrote 149 oracle ticks as 298 transactions, and Solana&apos;s fees keep that cadence practical.
+        wrote 149 oracle ticks as 298 transactions. What they cost is below.
       </>
     ),
   },
@@ -189,7 +207,34 @@ export function SolanaSection() {
             </Reveal>
           ))}
         </div>
+
+        <Reveal>
+          <div className="cost-strip">
+            <div className="cost-head">What the replay&apos;s 298 writes cost</div>
+            <div className="cost-figures">
+              <div className="cost-fig">
+                <span className="cost-label">On Solana</span>
+                <b className="cost-num c-green">$0.20</b>
+                <span className="cost-sub">0.001805 SOL in fees, summed from all 298 replay transactions</span>
+              </div>
+              <div className="cost-fig">
+                <span className="cost-label">On Ethereum mainnet, at minimum</span>
+                <b className="cost-num">$1.75</b>
+                <span className="cost-sub">
+                  the same 298 writes at 26,000 gas each and today&apos;s 0.084 gwei, about 9&times; more
+                </span>
+              </div>
+            </div>
+            <p className="cost-note">
+              Solana: the fee field of every replay transaction, 5,000 lamports per signature (235 with one signature, 63
+              with two), priced at SOL $112.70. Ethereum: 21,000 gas for any transaction plus a 5,000-gas storage update,
+              before any contract logic or calldata, so a floor, at ETH $2,702. Prices from CoinGecko and gas from a public
+              Ethereum RPC, Sept 21, 2026. Mainnet gas moves with demand; Solana&apos;s base fee is fixed per signature.
+            </p>
+          </div>
+        </Reveal>
       </div>
     </section>
   );
 }
+
