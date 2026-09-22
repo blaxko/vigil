@@ -130,22 +130,29 @@ legacy` is the fallback if you'd rather not add it).
 
 ## RPC endpoint
 
-The app reads chain state through `NEXT_PUBLIC_RPC_ENDPOINT` (default: the public `https://api.devnet.solana.com`). The
-public endpoint rate-limits: a few open tabs polling every 5 seconds are enough to get `429 Connection rate limits exceeded`.
-For a deployment other people will use, point it at a dedicated devnet endpoint and rebuild (`NEXT_PUBLIC_*` values are
-compiled into the client bundle, so changing the variable needs a new build).
+The app reads chain state through `NEXT_PUBLIC_RPC_ENDPOINT` (default: the public `https://api.devnet.solana.com`, which is what
+the deployment uses). Each dashboard tab batches its reads into `getMultipleAccounts` calls of at most 5 accounts every
+5 seconds, about 0.4 requests a second for a connected tab and 0.2 for a visitor, pauses polling in hidden tabs, and only shows a
+load error after three consecutive failed polls. The faucet and oracle-refresh routes read the same variable.
 
+To point it at another endpoint, set the variable and rebuild (`NEXT_PUBLIC_*` values are compiled into the client bundle).
 Because that value ends up in public JavaScript, use an endpoint that only reaches devnet, restrict the key to your site's
-domain in the provider's dashboard, and keep its quota low. Before switching, check it:
+domain in the provider's dashboard, and keep its quota low. Check it first:
 
 ```
-npx ts-node --project tsconfig.json scripts/check-rpc.ts <https RPC url>
+npx ts-node --project tsconfig.json scripts/check-rpc.ts <https RPC url> [--tabs N]
 ```
 
-The check confirms the endpoint is devnet (genesis hash), survives a burst and about ten requests a second for ten seconds, and
-supports the websocket that transaction confirmation uses. The public endpoint fails the load checks. The faucet and oracle-refresh
-routes read the same variable, so they use the dedicated endpoint too. The app also pauses polling in hidden tabs and only shows a
-load error after three consecutive failed polls.
+The check confirms the endpoint is devnet (genesis hash), serves N simulated open dashboard tabs (default 8) with no failed
+requests, and supports the websocket that transaction confirmation uses. A burst and a sustained-rate test are reported as
+headroom warnings only.
+
+**QuickNode was evaluated and intentionally not used.** The public endpoint limits each visitor's IP separately, so many
+simultaneous visitors, each at ~0.4 requests a second, stay far below its limit. A single API key's limit is shared by every
+visitor (QuickNode free: 15 requests a second in total, and `getMultipleAccounts` capped at 5 accounts), so under many
+simultaneous visitors it is the lower ceiling. It only helped in the edge case of many tabs behind one IP (12 tabs from one
+IP failed on the public endpoint and passed on QuickNode; 8 passed on both). Not an open question: revisit only if a demo
+runs from a shared network.
 
 ## Devnet deployment / seeding / demo
 

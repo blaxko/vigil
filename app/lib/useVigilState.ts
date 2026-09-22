@@ -4,11 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { BN } from "@coral-xyz/anchor";
 import type { PublicKey } from "@solana/web3.js";
-import { getAssociatedTokenAddressSync, getMint, getScaledUiAmountConfig, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+import { AccountLayout, getAssociatedTokenAddressSync, getMint, getScaledUiAmountConfig, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
 import { AAPLX_MINT, COLLATERAL_DECIMALS, FEED_ID, USDC_MINT } from "@/lib/constants";
 import { getLendingMarketProgram, getReadOnlyProvider, getRegimeOracleProgram } from "@/lib/anchor";
-import { positionPda, regimeStatePda, reservePda } from "@/lib/pda";
+import { debtVaultPda, positionPda, regimeStatePda, reservePda } from "@/lib/pda";
 
 export type RegimeState = {
   isOpen: boolean;
@@ -34,6 +34,13 @@ export type Reserve = {
 };
 
 const POLL_MS = 5000;
+const USDC_DECIMALS = 6;
+const MAX_ACCOUNTS_PER_CALL = 5;
+
+/** The token amount in a token account's raw data. Token-2022 accounts may be longer (extensions) but start with the same layout. */
+function tokenAmount(data: Buffer | Uint8Array): bigint {
+  return AccountLayout.decode(Buffer.from(data).subarray(0, AccountLayout.span)).amount;
+}
 const FAILURES_BEFORE_ERROR = 3; // about 15 seconds of the endpoint being genuinely unreachable
 
 /**
@@ -77,7 +84,26 @@ export function useVigilState(withLiquidity = false) {
     const lendingProgram = getLendingMarketProgram(readOnlyProvider);
 
     try {
-      const regimeAccountInfo = await connection.getAccountInfo(regimeStateAddr);
+      // Two requests at most per poll instead of six: everything this page reads goes through getMultipleAccounts.
+      // (The debt vault is a fixed PDA of the reserve, so its address is known without decoding the reserve first.)
+      type Wanted = "regime" | "reserve" | "vault" | "position" | "ata" | "wallet";
+      const wanted: { kind: Wanted; key: PublicKey }[] = [
+        { kind: "regime", key: regimeStateAddr },
+        { kind: "reserve", key: reserveAddr },
+      ];
+      if (withLiquidity) wanted.push({ kind: "vault", key: debtVaultPda(reserveAddr) });
+      if (wallet.publicKey) {
+        wanted.push({ kind: "position", key: positionPda(reserveAddr, wallet.publicKey) });
+        wanted.push({ kind: "ata", key: getAssociatedTokenAddressSync(AAPLX_MINT!, wallet.publicKey, false, TOKEN_2022_PROGRAM_ID) });
+        wanted.push({ kind: "wallet", key: wallet.publicKey });
+      }
+      // Some RPC plans cap getMultipleAccounts at 5 accounts per call, so read in chunks of 5, concurrently.
+      const chunks: { kind: Wanted; key: PublicKey }[][] = [];
+      for (let i = 0; i < wanted.length; i += MAX_ACCOUNTS_PER_CALL) chunks.push(wanted.slice(i, i + MAX_ACCOUNTS_PER_CALL));
+      const infos = (await Promise.all(chunks.map((c) => connection.getMultipleAccountsInfo(c.map((w) => w.key))))).flat();
+      const info = (kind: Wanted) => infos[wanted.findIndex((w) => w.kind === kind)] ?? null;
+
+      const regimeAccountInfo = info("regime");
       if (regimeAccountInfo) {
         // Anchor's Program constructor normalizes IDL account names to
         // camelCase internally (RegimeState -> regimeState) -- decode
@@ -87,19 +113,18 @@ export function useVigilState(withLiquidity = false) {
         const decoded = regimeProgram.coder.accounts.decode("regimeState", regimeAccountInfo.data);
         setRegimeState(decoded as RegimeState);
       }
-      const reserveAccountInfo = await connection.getAccountInfo(reserveAddr);
+      const reserveAccountInfo = info("reserve");
       if (reserveAccountInfo) {
         const decoded = lendingProgram.coder.accounts.decode("reserve", reserveAccountInfo.data);
         setReserve(decoded as Reserve);
-        if (withLiquidity) {
-          const vault = await connection.getTokenAccountBalance((decoded as Reserve).debtVault).catch(() => null);
-          if (vault) setDebtLiquidity(vault.value.uiAmount);
-        }
+      }
+      if (withLiquidity) {
+        const vault = info("vault");
+        if (vault) setDebtLiquidity(Number(tokenAmount(vault.data)) / 10 ** USDC_DECIMALS);
       }
 
       if (wallet.publicKey) {
-        const posAddr = positionPda(reserveAddr, wallet.publicKey);
-        const posInfo = await connection.getAccountInfo(posAddr);
+        const posInfo = info("position");
         if (posInfo) {
           const decoded = lendingProgram.coder.accounts.decode("position", posInfo.data);
           setPosition(decoded as Position);
@@ -107,12 +132,11 @@ export function useVigilState(withLiquidity = false) {
           setPosition(null);
         }
 
-        const ata = getAssociatedTokenAddressSync(AAPLX_MINT!, wallet.publicKey, false, TOKEN_2022_PROGRAM_ID);
-        const bal = await connection.getTokenAccountBalance(ata).catch(() => null);
-        setCollateralBalance(bal ? BigInt(bal.value.amount) : BigInt(0));
+        const ataInfo = info("ata");
+        setCollateralBalance(ataInfo ? tokenAmount(ataInfo.data) : BigInt(0));
 
-        const lamports = await connection.getBalance(wallet.publicKey).catch(() => null);
-        if (lamports !== null) setSolBalance(lamports / 1e9);
+        // A wallet that has never received SOL has no account at all, which is a balance of zero.
+        setSolBalance((info("wallet")?.lamports ?? 0) / 1e9);
       } else {
         setSolBalance(null);
       }
